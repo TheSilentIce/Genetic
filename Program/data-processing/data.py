@@ -1,30 +1,31 @@
+import pandas as pd
 import yfinance as yf
 
-tickers = [
-    # Tech
-    "AAPL",
-    "MSFT",
-    "GOOGL",
-    "GOOG",
-    "AMZN",
-    "META",
-    "NVDA",
-    "TSLA",
-    "ADBE",
-    "INTC",
-    "CRM",
-    # Finance
-    "JPM",
-    "BAC",
-    "C",
-    "WFC",
-    "GS",
-    "MS",
-    "BLK",
-    "V",
-    "MA",
-    "PYPL",
-]
+tickers = ["AAPL", "MSFT", "AMZN", "NVDA", "GOOG", "META", "TSLA", "AMD", "BRK-A"]
 
-data = yf.download(tickers, period="2y")
-data.to_csv("data.csv")
+# convert into format:
+# Name
+# Open,High,Close,...
+# Data,Data,Data,...
+# Intentional space
+
+df = yf.download(tickers, period="1mo", group_by="ticker")
+rows = []
+
+for ticker in tickers:
+    if isinstance(df.columns, pd.MultiIndex):
+        sub = df[ticker]
+    else:
+        sub = df.copy()
+
+    rows.append([ticker])
+
+    rows.append(["Date"] + list(sub.columns))
+
+    for date, r in sub.iterrows():
+        rows.append([date.strftime("%Y-%m-%d")] + r.values.tolist())
+
+    rows.append([])
+
+out = pd.DataFrame(rows)
+out.to_csv("data.csv", index=False, header=False)
