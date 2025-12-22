@@ -4,11 +4,12 @@
 
 class Portfolio {
 private:
-  std::map<std::string, unsigned short> stock_map;
+  std::map<std::string, float> stock_map;
 
 public:
-  Portfolio();
-  const std::map<std::string, unsigned short> &get_stock_map() const;
+  Portfolio(std::map<std::string, float> stock_map);
+  const std::map<std::string, float> &get_stock_map() const;
+  void insert(std::string key, float value);
 };
 
 #endif
