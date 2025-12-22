@@ -11,6 +11,30 @@
 #define MUTATION_PROBABILITY 0.05 // low prob
 constexpr double POWER = 4.0 / (DISTRiBUTION_INDEX + 1);
 
+/** SBC simulates a single point crossover in a binary encoded chromsome
+It uses a Probability Density Function(PDF) to do this
+Algorithm:
+Select two parents x1 and x2
+Generate a random number mu [0,1)
+Calculate BETA
+If mu <= 0.5
+Beta = (2 * mu) ^ (1 / (distribution index + 1))
+otherwise
+well, you can read the code lol
+This crossover actually generates two offspring
+offspring1 = 0.5 * [ (1 + BETA)x1 + (1 - BETA)x2 ];
+offspring1 = 0.5 * [ (1 - BETA)x1 + (1 + BETA)x2 ];
+
+that bool parameter is to do this, essentially you call this method twice
+
+Larger distrubution index generates children closer to parents
+smaller distribution index generates children farther away from parents;
+must be a non-negative integer
+
+The reason why we use this is essentially we get the benefits of a
+single point crossover with real values instead of binary ones
+
+**/
 std::map<std::string, float> simulated_binary_crossover(Portfolio *parent1,
                                                         Portfolio *parent2,
                                                         bool positive) {
@@ -56,6 +80,9 @@ std::map<std::string, float> simulated_binary_crossover(Portfolio *parent1,
   return new_map;
 }
 
+// this uses the BLX-Alpha crossover technique
+// Essentially, we take the two genes, create a min/max out of them
+// and select a random number within that range
 std::map<std::string, float> blend_crossover(Portfolio *parent1,
                                              Portfolio *parent2) {
   std::map<std::string, float> new_map{};
@@ -90,6 +117,7 @@ std::map<std::string, float> blend_crossover(Portfolio *parent1,
   return new_map;
 }
 
+// simple normalization, ensuring all percentages = 1
 void normalize(std::map<std::string, float> child) {
   float sum = 0;
   for (auto iter = child.begin(); iter != child.end(); iter++) {
@@ -102,6 +130,8 @@ void normalize(std::map<std::string, float> child) {
   }
 }
 
+// if a gene is chosen to be mutated, just adding 8% to it; arbritary number,
+// change as you want
 void mutate(std::map<std::string, float> child) {
   std::random_device rd;
   std::default_random_engine eng(rd());
