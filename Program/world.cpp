@@ -19,18 +19,6 @@ void initialize_population(const std::vector<std::string> &keys) {
   population.clear();
 }
 
-void slow_pop(std::vector<std::string> keys) {
-  for (int i{0}; i < POPULATION; ++i) {
-    population.push_back(slow(keys));
-  }
-
-  for (Portfolio *p : population) {
-    delete p;
-
-    population.clear();
-  }
-}
-
 /**
  * Calculate fitness
  * Hall of Fame

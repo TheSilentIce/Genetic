@@ -12,6 +12,8 @@ constexpr int DISTRiBUTION_INDEX = 10; // lower index equals greater diversity
 constexpr float MUTATION_PROBABILITY = 0.05; // low prob
 constexpr double POWER = 4.0 / (DISTRiBUTION_INDEX + 1);
 
+constexpr short MAC_CACHE_LINE = 128;
+
 std::default_random_engine &get_engine() {
   static std::default_random_engine eng(std::random_device{}());
   return eng;
@@ -54,8 +56,6 @@ simulated_binary_crossover(Portfolio *parent1, Portfolio *parent2,
   float mu = random_float();
   float beta{};
 
-  std::cout << "MU: " << mu << '\n';
-
   if (mu <= 0.5) {
     beta = pow(2 * mu, POWER);
   } else {
@@ -70,21 +70,23 @@ simulated_binary_crossover(Portfolio *parent1, Portfolio *parent2,
   auto p1_iter = parent1_map.begin();
   auto p2_iter = parent2_map.begin();
 
+  float sign_part = 1 + sign * beta;
+
   while (p1_iter != parent1_map.end()) {
-    float p1_gene = (1 + sign * beta) * p1_iter->second;
-    float p2_gene = (1 + sign * -1 * beta) * p2_iter->second;
+    float p1_gene = sign_part * p1_iter->second;
+    float p2_gene = sign_part * -1 * p2_iter->second;
 
     float new_gene = 0.5 * (p1_gene + p2_gene);
     if (new_gene <= 0) {
       new_gene = 0;
     }
+
     new_map.emplace(p1_iter->first, new_gene);
 
     ++p1_iter;
     ++p2_iter;
   }
   normalize(new_map);
-
   return new_map;
 }
 
@@ -133,7 +135,6 @@ void normalize(std::unordered_map<std::string, float> child) {
 
   for (auto iter = child.begin(); iter != child.end(); iter++) {
     float new_prop = iter->second / sum;
-    // child.insert_or_assign(iter->first, new_prop);
     child[iter->first] = new_prop;
   }
 }
@@ -144,8 +145,8 @@ void mutate(std::unordered_map<std::string, float> child) {
 
   for (auto iter = child.begin(); iter != child.end(); ++iter) {
     float chance = random_float();
+
     if (chance <= MUTATION_PROBABILITY) {
-      // child.insert_or_assign(iter->first, iter->second + 0.08);
       child[iter->first] = iter->second + 0.08;
     }
   }
@@ -160,22 +161,13 @@ Portfolio *create_random_portfolio(const std::vector<std::string> &keys) {
   std::unordered_map<std::string, float> unordered_map{};
   unordered_map.reserve(keys.size());
 
+  auto iter = unordered_map.begin();
+
   for (const std::string &key : keys) {
     float prop = random_float();
     unordered_map.emplace(key, prop);
   }
-  Portfolio *port = new Portfolio(unordered_map);
-  return port;
-}
-
-Portfolio *slow(std::vector<std::string> keys) {
-  std::unordered_map<std::string, float> unordered_map{};
-
-  for (std::string key : keys) {
-    float prop = random_float();
-    unordered_map.insert_or_assign(key, prop);
-  }
-
+  normalize(unordered_map);
   Portfolio *port = new Portfolio(unordered_map);
   return port;
 }

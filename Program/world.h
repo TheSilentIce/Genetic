@@ -8,6 +8,5 @@ void run_generation();
 void repopulate();
 void initialize_population(const std::vector<std::string> &keys);
 std::vector<Portfolio> get_pop();
-void slow_pop(std::vector<std::string> keys);
 
 #endif

@@ -59,12 +59,5 @@ int main() {
           .count();
   std::cout << elapsed << " milliseconds" << '\n';
 
-  start = std::chrono::high_resolution_clock::now();
-  slow_pop(tickets);
-  end = std::chrono::high_resolution_clock::now();
-  elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start)
-                .count();
-
-  std::cout << elapsed << " milliseconds" << '\n';
   return 0;
 }
