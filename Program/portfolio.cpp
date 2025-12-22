@@ -1,11 +1,10 @@
 #include "portfolio.h"
-#include <map>
 #include <string>
 
-Portfolio::Portfolio(std::map<std::string, float> stock_map) {
+Portfolio::Portfolio(std::unordered_map<std::string, float> stock_map) {
   this->stock_map = stock_map;
 }
-const std::map<std::string, float> &Portfolio::get_stock_map() const {
+const std::unordered_map<std::string, float> &Portfolio::get_stock_map() const {
   return stock_map;
 }
 

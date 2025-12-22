@@ -3,13 +3,24 @@
 #include <cstdlib>
 #include <ctime>
 #include <iostream>
-#include <map>
 #include <random>
+#include <unordered_map>
+#include <vector>
 
-#define ALPHA 0.5
-#define DISTRiBUTION_INDEX 10     // lower index equals greater diversity
-#define MUTATION_PROBABILITY 0.05 // low prob
+constexpr float ALPHA = 0.5;
+constexpr int DISTRiBUTION_INDEX = 10; // lower index equals greater diversity
+constexpr float MUTATION_PROBABILITY = 0.05; // low prob
 constexpr double POWER = 4.0 / (DISTRiBUTION_INDEX + 1);
+
+std::default_random_engine &get_engine() {
+  static std::default_random_engine eng(std::random_device{}());
+  return eng;
+}
+
+float random_float() {
+  static std::uniform_real_distribution<float> distr(0.0, 1.0);
+  return distr(get_engine());
+}
 
 /** SBC simulates a single point crossover in a binary encoded chromsome
 It uses a Probability Density Function(PDF) to do this
@@ -35,17 +46,12 @@ The reason why we use this is essentially we get the benefits of a
 single point crossover with real values instead of binary ones
 
 **/
-std::map<std::string, float> simulated_binary_crossover(Portfolio *parent1,
-                                                        Portfolio *parent2,
-                                                        bool positive) {
-  std::map<std::string, float> new_map{};
+std::unordered_map<std::string, float>
+simulated_binary_crossover(Portfolio *parent1, Portfolio *parent2,
+                           bool positive) {
+  std::unordered_map<std::string, float> new_map{};
   short sign = positive ? 1 : -1;
-
-  std::random_device rd;
-  std::default_random_engine eng(rd());
-  std::uniform_real_distribution<float> distr(0, 1);
-
-  float mu = distr(eng);
+  float mu = random_float();
   float beta{};
 
   std::cout << "MU: " << mu << '\n';
@@ -56,8 +62,10 @@ std::map<std::string, float> simulated_binary_crossover(Portfolio *parent1,
     beta = pow(1 / (2 * (1 - mu)), POWER);
   }
 
-  std::map<std::string, float> parent1_map = parent1->get_stock_map();
-  std::map<std::string, float> parent2_map = parent2->get_stock_map();
+  std::unordered_map<std::string, float> parent1_map = parent1->get_stock_map();
+  std::unordered_map<std::string, float> parent2_map = parent2->get_stock_map();
+
+  new_map.reserve(parent1_map.size());
 
   auto p1_iter = parent1_map.begin();
   auto p2_iter = parent2_map.begin();
@@ -70,7 +78,7 @@ std::map<std::string, float> simulated_binary_crossover(Portfolio *parent1,
     if (new_gene <= 0) {
       new_gene = 0;
     }
-    new_map.insert_or_assign(p1_iter->first, new_gene);
+    new_map.emplace(p1_iter->first, new_gene);
 
     ++p1_iter;
     ++p2_iter;
@@ -83,15 +91,14 @@ std::map<std::string, float> simulated_binary_crossover(Portfolio *parent1,
 // this uses the BLX-Alpha crossover technique
 // Essentially, we take the two genes, create a min/max out of them
 // and select a random number within that range
-std::map<std::string, float> blend_crossover(Portfolio *parent1,
-                                             Portfolio *parent2) {
-  std::map<std::string, float> new_map{};
+std::unordered_map<std::string, float> blend_crossover(Portfolio *parent1,
+                                                       Portfolio *parent2) {
+  std::unordered_map<std::string, float> new_map{};
 
-  std::random_device rd;
-  std::default_random_engine eng(rd());
+  std::unordered_map<std::string, float> parent1_map = parent1->get_stock_map();
+  std::unordered_map<std::string, float> parent2_map = parent2->get_stock_map();
 
-  std::map<std::string, float> parent1_map = parent1->get_stock_map();
-  std::map<std::string, float> parent2_map = parent2->get_stock_map();
+  new_map.reserve(parent1_map.size());
 
   auto p1_iter = parent1_map.begin();
   auto p2_iter = parent2_map.begin();
@@ -105,9 +112,9 @@ std::map<std::string, float> blend_crossover(Portfolio *parent1,
     float range_min = max - ALPHA * (min - max);
     float range_max = max + ALPHA * (min - max);
 
-    std::uniform_real_distribution<float> distr(range_min, range_max);
-    float new_gene = distr(eng);
-    new_map.insert_or_assign(p1_iter->first, new_gene);
+    std::uniform_real_distribution<float> distr1(range_min, range_max);
+    float new_gene = distr1(get_engine());
+    new_map.emplace(p1_iter->first, new_gene);
 
     ++p1_iter;
     ++p2_iter;
@@ -118,7 +125,7 @@ std::map<std::string, float> blend_crossover(Portfolio *parent1,
 }
 
 // simple normalization, ensuring all percentages = 1
-void normalize(std::map<std::string, float> child) {
+void normalize(std::unordered_map<std::string, float> child) {
   float sum = 0;
   for (auto iter = child.begin(); iter != child.end(); iter++) {
     sum += iter->second;
@@ -126,27 +133,49 @@ void normalize(std::map<std::string, float> child) {
 
   for (auto iter = child.begin(); iter != child.end(); iter++) {
     float new_prop = iter->second / sum;
-    child.insert_or_assign(iter->first, new_prop);
+    // child.insert_or_assign(iter->first, new_prop);
+    child[iter->first] = new_prop;
   }
 }
 
 // if a gene is chosen to be mutated, just adding 8% to it; arbritary number,
 // change as you want
-void mutate(std::map<std::string, float> child) {
-  std::random_device rd;
-  std::default_random_engine eng(rd());
-  std::uniform_real_distribution<float> distr(0.0, 1.0);
+void mutate(std::unordered_map<std::string, float> child) {
 
   for (auto iter = child.begin(); iter != child.end(); ++iter) {
-    float chance = distr(eng);
+    float chance = random_float();
     if (chance <= MUTATION_PROBABILITY) {
-      child.insert_or_assign(iter->first, iter->second + 0.08);
+      // child.insert_or_assign(iter->first, iter->second + 0.08);
+      child[iter->first] = iter->second + 0.08;
     }
   }
   normalize(child);
 }
 
-Portfolio *create_child(std::map<std::string, float> child) {
-  Portfolio *p_child = new Portfolio(child);
-  return p_child;
+Portfolio create_child(std::unordered_map<std::string, float> child) {
+  return Portfolio(child);
+}
+
+Portfolio *create_random_portfolio(const std::vector<std::string> &keys) {
+  std::unordered_map<std::string, float> unordered_map{};
+  unordered_map.reserve(keys.size());
+
+  for (const std::string &key : keys) {
+    float prop = random_float();
+    unordered_map.emplace(key, prop);
+  }
+  Portfolio *port = new Portfolio(unordered_map);
+  return port;
+}
+
+Portfolio *slow(std::vector<std::string> keys) {
+  std::unordered_map<std::string, float> unordered_map{};
+
+  for (std::string key : keys) {
+    float prop = random_float();
+    unordered_map.insert_or_assign(key, prop);
+  }
+
+  Portfolio *port = new Portfolio(unordered_map);
+  return port;
 }

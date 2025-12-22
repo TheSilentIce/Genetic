@@ -1,5 +1,7 @@
 #include "genetic_util.h"
 #include "portfolio.h"
+#include "world.h"
+#include <chrono>
 #include <iostream>
 #include <map>
 
@@ -12,33 +14,57 @@ void print_portfolio(Portfolio *p) {
 }
 
 int main() {
-  std::map<std::string, float> m{};
-  m.insert_or_assign("MSFT", 0.23);
-  m.insert_or_assign("AAPl", 0.67);
-  m.insert_or_assign("AMZN", .10);
-  Portfolio *p1 = new Portfolio(m);
+  // std::map<std::string, float> m{};
+  // m.insert_or_assign("MSFT", 0.23);
+  // m.insert_or_assign("AAPl", 0.67);
+  // m.insert_or_assign("AMZN", .10);
+  // Portfolio *p1 = new Portfolio(m);
+  //
+  // std::map<std::string, float> m1{};
+  // m1.insert_or_assign("MSFT", 0.1);
+  // m1.insert_or_assign("AAPL", 0.4);
+  // m1.insert_or_assign("AMZN", 0.5);
+  // Portfolio *p2 = new Portfolio(m1);
+  //
+  // std::map<std::string, float> a = simulated_binary_crossover(p1, p2, true);
+  // mutate(a);
+  // Portfolio *p3 = create_child(a);
+  //
+  // std::map<std::string, float> b = blend_crossover(p1, p2);
+  // mutate(b);
+  // Portfolio *p4 = create_child(b);
+  //
+  // print_portfolio(p3);
+  // print_portfolio(p4);
+  //
+  // delete p1;
+  // delete p2;
+  // delete p3;
+  // delete p4;
+  short num_stocks = 10;
 
-  std::map<std::string, float> m1{};
-  m1.insert_or_assign("MSFT", 0.1);
-  m1.insert_or_assign("AAPL", 0.4);
-  m1.insert_or_assign("AMZN", 0.5);
-  Portfolio *p2 = new Portfolio(m1);
+  std::vector<std::string> tickets{};
+  tickets.reserve(num_stocks);
 
-  std::map<std::string, float> a = simulated_binary_crossover(p1, p2, true);
-  mutate(a);
-  Portfolio *p3 = create_child(a);
+  for (int i = 0; i < num_stocks; ++i) {
+    tickets.push_back("T" + std::to_string(i));
+  }
 
-  std::map<std::string, float> b = blend_crossover(p1, p2);
-  mutate(b);
-  Portfolio *p4 = create_child(b);
+  auto start = std::chrono::high_resolution_clock::now();
+  initialize_population(tickets);
+  auto end = std::chrono::high_resolution_clock::now();
 
-  print_portfolio(p3);
-  print_portfolio(p4);
+  auto elapsed =
+      std::chrono::duration_cast<std::chrono::milliseconds>(end - start)
+          .count();
+  std::cout << elapsed << " milliseconds" << '\n';
 
-  delete p1;
-  delete p2;
-  delete p3;
-  delete p4;
+  start = std::chrono::high_resolution_clock::now();
+  slow_pop(tickets);
+  end = std::chrono::high_resolution_clock::now();
+  elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start)
+                .count();
 
+  std::cout << elapsed << " milliseconds" << '\n';
   return 0;
 }
