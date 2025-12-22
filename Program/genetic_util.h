@@ -3,17 +3,18 @@
 #include "portfolio.h"
 #include <vector>
 
-std::unordered_map<std::string, float>
-simulated_binary_crossover(Portfolio *parent1, Portfolio *parent2,
-                           bool positive);
-std::unordered_map<std::string, float> blend_crossover(Portfolio *parent1,
-                                                       Portfolio *parent2);
+std::vector<float> simulated_binary_crossover(Portfolio *parent1,
+                                              Portfolio *parent2,
+                                              bool positive);
+std::vector<float> blend_crossover(Portfolio *parent1, Portfolio *parent2);
 
-void mutate(std::unordered_map<std::string, float> child);
+void mutate(std::vector<float> child);
 void normalize(std::unordered_map<std::string, float> child);
+void normalize(std::vector<float> child);
 
-Portfolio create_child(std::unordered_map<std::string, float> child);
+Portfolio create_child(std::vector<float> child);
 
 Portfolio *create_random_portfolio(const std::vector<std::string> &keys);
+Portfolio *create_vec(const std::vector<std::string> &keys);
 
 #endif

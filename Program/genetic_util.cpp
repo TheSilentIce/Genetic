@@ -48,10 +48,11 @@ The reason why we use this is essentially we get the benefits of a
 single point crossover with real values instead of binary ones
 
 **/
-std::unordered_map<std::string, float>
-simulated_binary_crossover(Portfolio *parent1, Portfolio *parent2,
-                           bool positive) {
-  std::unordered_map<std::string, float> new_map{};
+std::vector<float> simulated_binary_crossover(Portfolio *parent1,
+                                              Portfolio *parent2,
+                                              bool positive) {
+  std::vector<float> new_props{};
+
   short sign = positive ? 1 : -1;
   float mu = random_float();
   float beta{};
@@ -62,68 +63,59 @@ simulated_binary_crossover(Portfolio *parent1, Portfolio *parent2,
     beta = pow(1 / (2 * (1 - mu)), POWER);
   }
 
-  std::unordered_map<std::string, float> parent1_map = parent1->get_stock_map();
-  std::unordered_map<std::string, float> parent2_map = parent2->get_stock_map();
-
-  new_map.reserve(parent1_map.size());
-
-  auto p1_iter = parent1_map.begin();
-  auto p2_iter = parent2_map.begin();
+  const std::vector<float> &p1_props = parent1->get_props();
+  const std::vector<float> &p2_props = parent2->get_props();
+  new_props.reserve(p1_props.size());
 
   float sign_part = 1 + sign * beta;
 
-  while (p1_iter != parent1_map.end()) {
-    float p1_gene = sign_part * p1_iter->second;
-    float p2_gene = sign_part * -1 * p2_iter->second;
+  short size = p1_props.size();
+  for (short i = 0; i < size; ++i) {
+    float p1_gene = sign_part * p1_props.at(i);
+    float p2_gene = sign_part * p2_props.at(i);
 
     float new_gene = 0.5 * (p1_gene + p2_gene);
-    if (new_gene <= 0) {
+    if (new_gene < 0) {
       new_gene = 0;
     }
 
-    new_map.emplace(p1_iter->first, new_gene);
-
-    ++p1_iter;
-    ++p2_iter;
+    new_props.push_back(new_gene);
   }
-  normalize(new_map);
-  return new_map;
+
+  normalize(new_props);
+  return new_props;
 }
 
 // this uses the BLX-Alpha crossover technique
 // Essentially, we take the two genes, create a min/max out of them
 // and select a random number within that range
-std::unordered_map<std::string, float> blend_crossover(Portfolio *parent1,
-                                                       Portfolio *parent2) {
-  std::unordered_map<std::string, float> new_map{};
+std::vector<float> blend_crossover(Portfolio *parent1, Portfolio *parent2) {
+  std::vector<float> new_props{};
 
-  std::unordered_map<std::string, float> parent1_map = parent1->get_stock_map();
-  std::unordered_map<std::string, float> parent2_map = parent2->get_stock_map();
+  const std::vector<float> &p1_props = parent1->get_props();
+  const std::vector<float> &p2_props = parent2->get_props();
 
-  new_map.reserve(parent1_map.size());
+  new_props.reserve(p1_props.size());
 
-  auto p1_iter = parent1_map.begin();
-  auto p2_iter = parent2_map.begin();
+  short size = p1_props.size();
+  for (short i = 0; i < size; ++i) {
+    float p1 = p1_props.at(i);
+    float p2 = p2_props.at(i);
 
-  while (p1_iter != parent1_map.end()) {
-    float p1 = p1_iter->second;
-    float p2 = p2_iter->second;
-    float max = p1 >= p2 ? p1 : p2;
-    float min = p2 <= p1 ? p2 : p1;
+    float bigger = p1 >= p2 ? p1 : p2;
+    float smaller = p2 <= p1 ? p2 : p1;
 
-    float range_min = max - ALPHA * (min - max);
-    float range_max = max + ALPHA * (min - max);
+    float min = bigger - ALPHA * (smaller - bigger);
+    float max = bigger + ALPHA * (smaller - bigger);
 
-    std::uniform_real_distribution<float> distr1(range_min, range_max);
+    std::uniform_real_distribution<float> distr1(min, max);
     float new_gene = distr1(get_engine());
-    new_map.emplace(p1_iter->first, new_gene);
 
-    ++p1_iter;
-    ++p2_iter;
+    new_props.push_back(new_gene);
   }
 
-  normalize(new_map);
-  return new_map;
+  normalize(new_props);
+  return new_props;
 }
 
 // simple normalization, ensuring all percentages = 1
@@ -139,17 +131,31 @@ void normalize(std::unordered_map<std::string, float> child) {
   }
 }
 
+void normalize(std::vector<float> child) {
+  float sum = 0;
+  for (float f : child) {
+    sum += f;
+  }
+
+  for (short i = 0; i < child.size(); ++i) {
+    float new_prop = child.at(i) / sum;
+    child[i] = new_prop;
+  }
+}
+
 // if a gene is chosen to be mutated, just adding 8% to it; arbritary number,
 // change as you want
-void mutate(std::unordered_map<std::string, float> child) {
+void mutate(std::vector<float> child) {
+  short size = child.size();
 
-  for (auto iter = child.begin(); iter != child.end(); ++iter) {
+  for (short i{0}; i < size; ++i) {
     float chance = random_float();
 
     if (chance <= MUTATION_PROBABILITY) {
-      child[iter->first] = iter->second + 0.08;
+      child[i] = child[i] + 0.08;
     }
   }
+
   normalize(child);
 }
 
@@ -161,13 +167,24 @@ Portfolio *create_random_portfolio(const std::vector<std::string> &keys) {
   std::unordered_map<std::string, float> unordered_map{};
   unordered_map.reserve(keys.size());
 
-  auto iter = unordered_map.begin();
-
   for (const std::string &key : keys) {
     float prop = random_float();
     unordered_map.emplace(key, prop);
   }
   normalize(unordered_map);
   Portfolio *port = new Portfolio(unordered_map);
+  return port;
+}
+
+Portfolio *create_vec(const std::vector<std::string> &keys) {
+  std::vector<float> props{};
+  props.reserve(keys.size());
+
+  for (const std::string &key : keys) {
+    float prop = random_float();
+    props.push_back(prop);
+  }
+  normalize(props);
+  Portfolio *port = new Portfolio(props);
   return port;
 }

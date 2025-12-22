@@ -41,7 +41,7 @@ int main() {
   // delete p2;
   // delete p3;
   // delete p4;
-  short num_stocks = 10;
+  short num_stocks = 30;
 
   std::vector<std::string> tickets{};
   tickets.reserve(num_stocks);
