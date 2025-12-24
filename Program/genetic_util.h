@@ -9,12 +9,8 @@ std::vector<float> simulated_binary_crossover(Portfolio *parent1,
 std::vector<float> blend_crossover(Portfolio *parent1, Portfolio *parent2);
 
 void mutate(std::vector<float> child);
-void normalize(std::unordered_map<std::string, float> child);
-void normalize(std::vector<float> child);
+void normalize(std::vector<float> &child);
 
 Portfolio create_child(std::vector<float> child);
-
 Portfolio *create_random_portfolio(const std::vector<std::string> &keys);
-Portfolio *create_vec(const std::vector<std::string> &keys);
-
 #endif

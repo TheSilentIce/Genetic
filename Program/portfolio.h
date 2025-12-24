@@ -4,15 +4,11 @@
 
 class Portfolio {
 private:
-  std::unordered_map<std::string, float> stock_map;
-  std::vector<float> props;
+  std::vector<float> stock_map;
 
 public:
-  Portfolio(std::unordered_map<std::string, float> stock_map);
-  Portfolio(std::vector<float> props);
-  const std::unordered_map<std::string, float> &get_stock_map() const;
-  const std::vector<float> &get_props() const;
-  void insert(std::string key, float value);
+  Portfolio(std::vector<float> stock_map);
+  const std::vector<float> &get_stock_map() const;
 };
 
 #endif

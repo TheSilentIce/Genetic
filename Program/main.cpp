@@ -5,12 +5,19 @@
 #include <iostream>
 #include <map>
 
-void print_portfolio(Portfolio *p) {
-  for (auto iter = p->get_stock_map().begin(); iter != p->get_stock_map().end();
-       ++iter) {
-    std::cout << iter->first << ": " << iter->second << '\n';
+void print_portfolio(Portfolio *p, std::vector<std::string> tickets) {
+  std::vector<float> props = p->get_stock_map();
+  short size = tickets.size();
+
+  float sum = 0;
+
+  for (short i{}; i < size; ++i) {
+    std::cout << tickets.at(i) << ": " << props.at(i) << "\n";
+    sum += props.at(i);
   }
-  std::cout << '\n';
+
+  std::cout << "SUM: " << sum << '\n';
+  std::cout << "\n";
 }
 
 int main() {
@@ -57,6 +64,11 @@ int main() {
   auto elapsed =
       std::chrono::duration_cast<std::chrono::milliseconds>(end - start)
           .count();
+
+  std::vector<Portfolio *> props = get_pop();
+  Portfolio *p = props.at(0);
+  print_portfolio(p, tickets);
+
   std::cout << elapsed << " milliseconds" << '\n';
 
   return 0;

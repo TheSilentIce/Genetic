@@ -1,14 +1,14 @@
 #include "genetic_util.h"
 #include <cmath>
+#include <cstdint>
 #include <cstdlib>
 #include <ctime>
-#include <iostream>
 #include <random>
-#include <unordered_map>
 #include <vector>
 
 constexpr float ALPHA = 0.5;
-constexpr int DISTRiBUTION_INDEX = 10; // lower index equals greater diversity
+constexpr int32_t DISTRiBUTION_INDEX =
+    10; // lower index equals greater diversity
 constexpr float MUTATION_PROBABILITY = 0.05; // low prob
 constexpr double POWER = 4.0 / (DISTRiBUTION_INDEX + 1);
 
@@ -63,8 +63,8 @@ std::vector<float> simulated_binary_crossover(Portfolio *parent1,
     beta = pow(1 / (2 * (1 - mu)), POWER);
   }
 
-  const std::vector<float> &p1_props = parent1->get_props();
-  const std::vector<float> &p2_props = parent2->get_props();
+  const std::vector<float> &p1_props = parent1->get_stock_map();
+  const std::vector<float> &p2_props = parent2->get_stock_map();
   new_props.reserve(p1_props.size());
 
   float sign_part = 1 + sign * beta;
@@ -92,8 +92,8 @@ std::vector<float> simulated_binary_crossover(Portfolio *parent1,
 std::vector<float> blend_crossover(Portfolio *parent1, Portfolio *parent2) {
   std::vector<float> new_props{};
 
-  const std::vector<float> &p1_props = parent1->get_props();
-  const std::vector<float> &p2_props = parent2->get_props();
+  const std::vector<float> &p1_props = parent1->get_stock_map();
+  const std::vector<float> &p2_props = parent2->get_stock_map();
 
   new_props.reserve(p1_props.size());
 
@@ -119,19 +119,7 @@ std::vector<float> blend_crossover(Portfolio *parent1, Portfolio *parent2) {
 }
 
 // simple normalization, ensuring all percentages = 1
-void normalize(std::unordered_map<std::string, float> child) {
-  float sum = 0;
-  for (auto iter = child.begin(); iter != child.end(); iter++) {
-    sum += iter->second;
-  }
-
-  for (auto iter = child.begin(); iter != child.end(); iter++) {
-    float new_prop = iter->second / sum;
-    child[iter->first] = new_prop;
-  }
-}
-
-void normalize(std::vector<float> child) {
+void normalize(std::vector<float> &child) {
   float sum = 0;
   for (float f : child) {
     sum += f;
@@ -159,24 +147,9 @@ void mutate(std::vector<float> child) {
   normalize(child);
 }
 
-Portfolio create_child(std::unordered_map<std::string, float> child) {
-  return Portfolio(child);
-}
+Portfolio create_child(std::vector<float> child) { return Portfolio(child); }
 
 Portfolio *create_random_portfolio(const std::vector<std::string> &keys) {
-  std::unordered_map<std::string, float> unordered_map{};
-  unordered_map.reserve(keys.size());
-
-  for (const std::string &key : keys) {
-    float prop = random_float();
-    unordered_map.emplace(key, prop);
-  }
-  normalize(unordered_map);
-  Portfolio *port = new Portfolio(unordered_map);
-  return port;
-}
-
-Portfolio *create_vec(const std::vector<std::string> &keys) {
   std::vector<float> props{};
   props.reserve(keys.size());
 
