@@ -9,7 +9,7 @@ tickers = ["AAPL", "MSFT", "AMZN", "NVDA", "GOOG", "META", "TSLA", "AMD", "BRK-A
 # Data,Data,Data,...
 # Intentional space
 
-df = yf.download(tickers, period="1mo", group_by="ticker")
+df = yf.download(tickers, period="1y", group_by="ticker")
 rows = []
 
 for ticker in tickers:
