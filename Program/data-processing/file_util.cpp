@@ -1,12 +1,11 @@
-#include "utilties.h"
+#include "file_util.h"
+#include "calculations.h"
 #include <algorithm>
 #include <fstream>
 #include <iostream>
 #include <sstream>
-#include <string>
 
 constexpr short NUM_TICKETS = 500;
-constexpr short INITIAL_DAYS = 14;
 
 /**
  * Format:
@@ -16,59 +15,39 @@ constexpr short INITIAL_DAYS = 14;
 
  */
 
-std::vector<float> initialize_RSI(const std::vector<std::string> &stock_data) {
-  std::vector<float> rsi_vector{};
+void create_csv(const std::vector<std::vector<std::string>> &data) {
+  std::ofstream file;
+  file.open("new_data.csv");
 
-  float avg_gain = 0;
-  float avg_loss = 0;
+  std::vector<std::string> names = get_names(data);
 
-  float before = split_line(stock_data.at(2)).at(3);
-  float curr{};
+  for (short i = 0; i < data.size(); ++i) {
+    const std::vector<std::string> vec = data.at(i);
+    std::vector<float> rsi = initialize_RSI(vec);
 
-  // initialize rsi
-  for (short i = 3; i < INITIAL_DAYS + 3; ++i) {
-    std::vector<double> a = split_line(stock_data.at(i));
-    curr = a.at(3);
-    if (curr - before >= 0) {
-      avg_gain += curr - before;
-    } else {
-      before += before - curr;
+    file << names.at(i) << '\n';
+
+    std::cout << "SIZE: " << rsi.size() << '\n';
+    std::cout << "A SIZE: " << vec.size() << '\n';
+    for (short j = 16; j < vec.size(); ++j) {
+      std::vector<double> line = split_line(vec.at(j));
+      std::string new_line;
+
+      new_line += std::to_string(line.at(0)) + ',';
+      new_line += std::to_string(line.at(3)) + ',';
+      new_line += std::to_string(line.at(1)) + ',';
+      new_line += std::to_string(line.at(2)) + ',';
+      new_line += std::to_string(rsi.at(j - 16));
+      // std::cout << j - 15 << '\n';
+      new_line += '\n';
+
+      // std::cout << new_line << '\n';
+
+      file << new_line;
     }
-
-    before = curr;
   }
 
-  avg_gain /= 14;
-  avg_loss /= 14;
-
-  rsi_vector.push_back(100 - (100 / (1 + avg_gain / avg_loss)));
-
-  std::cout << "SIZE: " << stock_data.size() << '\n';
-  for (short i = INITIAL_DAYS + 3; i < stock_data.size(); ++i) {
-    curr = split_line(stock_data.at(i)).at(3);
-    float rsi = calculate_RSI(avg_gain, avg_loss, curr, before);
-    printf("Day: %d --- RSI: %f\n", i, rsi);
-
-    rsi_vector.push_back(rsi);
-    before = curr;
-  }
-  return rsi_vector;
-}
-
-// avg_gain = (prev_gain * 13 + curr_gain) / 14;
-// avg_loss = (prev_loss * 13 + curr_loss) / 14;
-//  RSI = 100 - 100 / (1 + RS)
-//  RS = Average Up / Average Down
-float calculate_RSI(float &avg_gain, float &avg_loss, float curr,
-                    float before) {
-  float gain = std::max(0.0f, curr - before);
-  float loss = std::max(0.0f, before - curr);
-
-  avg_gain = (avg_gain * 13 + gain) / 14;
-  avg_loss = (avg_loss * 13 + loss) / 14;
-
-  float RS = avg_gain / avg_loss;
-  return 100 - (100 / (1 + RS));
+  file.close();
 }
 
 std::vector<std::vector<std::string>> read_stocks(std::string filepath) {
@@ -136,6 +115,3 @@ void print(const std::vector<std::vector<std::string>> a) {
     std::cout << '\n';
   }
 }
-
-void create_csv(std::vector<std::vector<std::string>> data,
-                std::vector<std::string>) {}
