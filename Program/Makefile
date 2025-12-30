@@ -1,11 +1,17 @@
-all: create_data create_object
+all: initialize_data initialize_new_data create_genetic 
 
-create_data:
-	cd ./data-processing/ && python3 data.py
+create_genetic:
+	g++ -Wall -std=c++17 ./genetic/*.cpp -o algo
+	./algo
 
-create_object:
-	g++ -Wall -std=c++17 *.cpp -o algo 
 
-clean:
-	cd ./data-processing/ && rm data.csv
-	rm algo
+initialize_data:
+	python3 ./data-processing/data.py
+	mv data.csv ./data/
+
+
+initialize_new_data:
+	g++ -Wall -std=c++17 ./data-processing/*.cpp -o runner
+	./runner
+	mv new_data.csv ./data/
+
