@@ -4,7 +4,9 @@
 #include <string>
 
 int main() {
-  std::string filepath = "./data.csv";
+  // filepath is dependent on where Makefile is run
+  // TODO standardize filepath inputting
+  std::string filepath = "./data/data.csv";
   auto data = read_stocks(filepath);
 
   create_csv(data);

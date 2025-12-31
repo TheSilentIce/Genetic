@@ -50,8 +50,13 @@ void create_csv(const std::vector<std::vector<std::string>> &data) {
   file.close();
 }
 
-std::vector<std::vector<std::string>> read_stocks(std::string filepath) {
+std::vector<std::vector<std::string>> read_stocks(const std::string &filepath) {
   std::ifstream data_file(filepath);
+  if (!data_file.is_open()) {
+    std::cerr << "File not Open" << filepath << '\n';
+    return {};
+  }
+
   std::string line;
 
   std::vector<std::vector<std::string>> data{};

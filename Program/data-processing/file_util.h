@@ -6,7 +6,7 @@
 
 void create_csv(const std::vector<std::vector<std::string>> &data);
 
-std::vector<std::vector<std::string>> read_stocks(std::string filepath);
+std::vector<std::vector<std::string>> read_stocks(const std::string &filepath);
 
 std::vector<double> split_line(std::string line);
 
