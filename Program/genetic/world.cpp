@@ -4,11 +4,11 @@
 #include <iostream>
 #include <random>
 
-constexpr short GENERATIONS{1000};
+// constexpr short GENERATIONS{1000};
 constexpr int32_t POPULATION{100'000};
-constexpr int16_t CHILDREN{500};
-constexpr float TOP_PERCENTAGE{0.1};
-constexpr int16_t TOP{CHILDREN * (short)TOP_PERCENTAGE};
+// constexpr int16_t CHILDREN{500};
+// constexpr float TOP_PERCENTAGE{0.1};
+// constexpr int16_t TOP{CHILDREN * (short)TOP_PERCENTAGE};
 
 std::vector<Portfolio *> population;
 std::vector<Portfolio *> mating_pool;

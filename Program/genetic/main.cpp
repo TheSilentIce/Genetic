@@ -39,8 +39,8 @@ int main() {
           .count();
 
   std::vector<Portfolio *> props = get_pop();
-  Portfolio *p = props.at(0);
-  print_portfolio(p, tickets);
+  // Portfolio *p = props.at(0);
+  // print_portfolio(p, tickets);
 
   std::cout << elapsed << " milliseconds" << '\n';
 

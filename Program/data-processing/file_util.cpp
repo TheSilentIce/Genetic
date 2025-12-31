@@ -21,18 +21,16 @@ void create_csv(const std::vector<std::vector<std::string>> &data) {
 
   std::vector<std::string> names = get_names(data);
 
+  file << "Ticket,Open,Close,High,Low,RSI" << '\n';
   for (short i = 0; i < data.size(); ++i) {
     const std::vector<std::string> vec = data.at(i);
     std::vector<float> rsi = initialize_RSI(vec);
 
-    file << names.at(i) << '\n';
-
-    std::cout << "SIZE: " << rsi.size() << '\n';
-    std::cout << "A SIZE: " << vec.size() << '\n';
     for (short j = 16; j < vec.size(); ++j) {
       std::vector<double> line = split_line(vec.at(j));
       std::string new_line;
 
+      new_line += names.at(i) + ',';
       new_line += std::to_string(line.at(0)) + ',';
       new_line += std::to_string(line.at(3)) + ',';
       new_line += std::to_string(line.at(1)) + ',';

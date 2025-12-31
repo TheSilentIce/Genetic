@@ -12,7 +12,7 @@ constexpr int32_t DISTRiBUTION_INDEX =
 constexpr float MUTATION_PROBABILITY = 0.05; // low prob
 constexpr double POWER = 4.0 / (DISTRiBUTION_INDEX + 1);
 
-constexpr short MAC_CACHE_LINE = 128;
+// constexpr short MAC_CACHE_LINE = 128;
 
 std::default_random_engine &get_engine() {
   static std::default_random_engine eng(std::random_device{}());
@@ -153,7 +153,7 @@ Portfolio *create_random_portfolio(const std::vector<std::string> &keys) {
   std::vector<float> props{};
   props.reserve(keys.size());
 
-  for (const std::string &key : keys) {
+  for (short i = 0; i < keys.size(); ++i) {
     float prop = random_float();
     props.push_back(prop);
   }

@@ -4,7 +4,7 @@
 #include <iostream>
 #include <string>
 
-constexpr short NUM_TICKETS = 500;
+// constexpr short NUM_TICKETS = 500;
 constexpr short INITIAL_DAYS = 14;
 
 /**
