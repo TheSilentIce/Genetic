@@ -6,6 +6,10 @@
 
 // constexpr short NUM_TICKETS = 500;
 constexpr short INITIAL_DAYS = 14;
+constexpr short MOVING_AVERAGE_PERIOD = 10;
+constexpr float SMOOTHING_FACTOR = 2.0;
+constexpr float SMOOTHING_OVER_PERIOD =
+    SMOOTHING_FACTOR / (MOVING_AVERAGE_PERIOD + 1);
 
 /**
  * Format:
@@ -21,13 +25,13 @@ std::vector<float> initialize_RSI(const std::vector<std::string> &stock_data) {
   float avg_gain = 0;
   float avg_loss = 0;
 
-  float before = split_line(stock_data.at(2)).at(3);
+  float before = split_line(stock_data.at(2)).at(CLOSE);
   float curr{};
 
   // initialize rsi
-  for (short i = 3; i < INITIAL_DAYS + 3; ++i) {
+  for (short i = 0; i < INITIAL_DAYS; ++i) {
     std::vector<double> a = split_line(stock_data.at(i));
-    curr = a.at(3);
+    curr = a.at(CLOSE);
     if (curr - before >= 0) {
       avg_gain += curr - before;
     } else {
@@ -42,10 +46,9 @@ std::vector<float> initialize_RSI(const std::vector<std::string> &stock_data) {
 
   rsi_vector.push_back(100 - (100 / (1 + avg_gain / avg_loss)));
 
-  for (short i = INITIAL_DAYS + 3; i < stock_data.size(); ++i) {
-    curr = split_line(stock_data.at(i)).at(3);
+  for (short i = INITIAL_DAYS; i < stock_data.size(); ++i) {
+    curr = split_line(stock_data.at(i)).at(CLOSE);
     float rsi = calculate_RSI(avg_gain, avg_loss, curr, before);
-    // printf("Day: %d --- RSI: %f\n", i, rsi);
 
     rsi_vector.push_back(rsi);
     before = curr;
@@ -67,4 +70,42 @@ float calculate_RSI(float &avg_gain, float &avg_loss, float curr,
 
   float RS = avg_gain / avg_loss;
   return 100 - (100 / (1 + RS));
+}
+
+std::vector<float> init_SMA(const std::vector<std::string> &stock_data) {
+  std::vector<float> sma_vector{};
+  for (short i = 9; i < stock_data.size(); ++i) {
+    float sma = calculate_SMA(i - 9, i, stock_data);
+    sma_vector.push_back(sma);
+  }
+  return sma_vector;
+}
+
+float calculate_SMA(short beg, short end,
+                    const std::vector<std::string> &stock_data) {
+  float sum = 0;
+  for (short i = beg; i <= end; ++i) {
+    auto line = split_line(stock_data.at(i));
+    sum += line.at(CLOSE);
+  }
+  return sum / MOVING_AVERAGE_PERIOD;
+}
+
+std::vector<float> init_EMA(const std::vector<std::string> &stock_data) {
+  float ema = calculate_SMA(0, 9, stock_data);
+  std::vector<float> ema_vector{};
+  ema_vector.push_back(ema);
+
+  for (short i = 10; i < stock_data.size(); ++i) {
+    float price = split_line(stock_data.at(i)).at(CLOSE);
+    ema = calculate_EMA(ema, price);
+    ema_vector.push_back(ema);
+  }
+  return ema_vector;
+}
+
+float calculate_EMA(float ema, float price) {
+  float a = price * SMOOTHING_OVER_PERIOD;
+  float b = ema * (1 - SMOOTHING_OVER_PERIOD);
+  return a + b;
 }

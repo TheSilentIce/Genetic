@@ -15,31 +15,32 @@ constexpr short NUM_TICKETS = 500;
 
  */
 
-void create_csv(const std::vector<std::vector<std::string>> &data) {
+void create_csv(std::vector<std::vector<std::string>> &data) {
   std::ofstream file;
   file.open("new_data.csv");
-
   std::vector<std::string> names = get_names(data);
+  cleaningData(data);
 
-  file << "Ticket,Open,Close,High,Low,RSI" << '\n';
+  file << "Ticket,Open,Close,High,Low,RSI,SMA,EMA" << '\n';
   for (short i = 0; i < data.size(); ++i) {
     const std::vector<std::string> vec = data.at(i);
     std::vector<float> rsi = initialize_RSI(vec);
+    std::vector<float> sma = init_SMA(vec);
+    std::vector<float> ema = init_EMA(vec);
 
-    for (short j = 16; j < vec.size(); ++j) {
+    for (short j = 14; j < vec.size(); ++j) {
       std::vector<double> line = split_line(vec.at(j));
       std::string new_line;
 
       new_line += names.at(i) + ',';
-      new_line += std::to_string(line.at(0)) + ',';
-      new_line += std::to_string(line.at(3)) + ',';
-      new_line += std::to_string(line.at(1)) + ',';
-      new_line += std::to_string(line.at(2)) + ',';
-      new_line += std::to_string(rsi.at(j - 16));
-      // std::cout << j - 15 << '\n';
+      new_line += std::to_string(line.at(OPEN)) + ',';
+      new_line += std::to_string(line.at(CLOSE)) + ',';
+      new_line += std::to_string(line.at(HIGH)) + ',';
+      new_line += std::to_string(line.at(LOW)) + ',';
+      new_line += std::to_string(rsi.at(j - 14)) + ',';
+      new_line += std::to_string(sma.at(j - 14)) + ',';
+      new_line += std::to_string(ema.at(j - 14));
       new_line += '\n';
-
-      // std::cout << new_line << '\n';
 
       file << new_line;
     }
@@ -61,15 +62,24 @@ std::vector<std::vector<std::string>> read_stocks(const std::string &filepath) {
 
   std::vector<std::string> a{};
   while (std::getline(data_file, line)) {
+    std::cout << line << '\n';
     if (line != ",,,,,") {
       a.push_back(line);
     } else {
       data.push_back(std::move(a));
       a.clear();
+      break;
     }
   }
   data_file.close();
   return data;
+}
+
+void cleaningData(std::vector<std::vector<std::string>> &data) {
+  for (short i = 0; i < data.size(); ++i) {
+    data.at(i).erase(data.at(i).begin());
+    data.at(i).erase(data.at(i).begin());
+  }
 }
 
 std::vector<std::string>
