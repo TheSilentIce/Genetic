@@ -1,12 +1,11 @@
 #include "calculations.h"
 #include "file_util.h"
 #include <algorithm>
-#include <iostream>
 #include <string>
 
-// constexpr short NUM_TICKETS = 500;
-constexpr short INITIAL_DAYS = 14;
-constexpr short MOVING_AVERAGE_PERIOD = 10;
+// constexpr i16 NUM_TICKETS = 500;
+constexpr i16 INITIAL_DAYS = 14;
+constexpr i16 MOVING_AVERAGE_PERIOD = 10;
 constexpr float SMOOTHING_FACTOR = 2.0;
 constexpr float SMOOTHING_OVER_PERIOD =
     SMOOTHING_FACTOR / (MOVING_AVERAGE_PERIOD + 1);
@@ -29,7 +28,7 @@ std::vector<float> initialize_RSI(const std::vector<std::string> &stock_data) {
   float curr{};
 
   // initialize rsi
-  for (short i = 0; i < INITIAL_DAYS; ++i) {
+  for (i16 i = 0; i < INITIAL_DAYS; ++i) {
     std::vector<double> a = split_line(stock_data.at(i));
     curr = a.at(CLOSE);
     if (curr - before >= 0) {
@@ -46,7 +45,7 @@ std::vector<float> initialize_RSI(const std::vector<std::string> &stock_data) {
 
   rsi_vector.push_back(100 - (100 / (1 + avg_gain / avg_loss)));
 
-  for (short i = INITIAL_DAYS; i < stock_data.size(); ++i) {
+  for (i16 i = INITIAL_DAYS; i < stock_data.size(); ++i) {
     curr = split_line(stock_data.at(i)).at(CLOSE);
     float rsi = calculate_RSI(avg_gain, avg_loss, curr, before);
 
@@ -74,17 +73,17 @@ float calculate_RSI(float &avg_gain, float &avg_loss, float curr,
 
 std::vector<float> init_SMA(const std::vector<std::string> &stock_data) {
   std::vector<float> sma_vector{};
-  for (short i = 9; i < stock_data.size(); ++i) {
+  for (i16 i = 9; i < stock_data.size(); ++i) {
     float sma = calculate_SMA(i - 9, i, stock_data);
     sma_vector.push_back(sma);
   }
   return sma_vector;
 }
 
-float calculate_SMA(short beg, short end,
+float calculate_SMA(i16 beg, i16 end,
                     const std::vector<std::string> &stock_data) {
   float sum = 0;
-  for (short i = beg; i <= end; ++i) {
+  for (i16 i = beg; i <= end; ++i) {
     auto line = split_line(stock_data.at(i));
     sum += line.at(CLOSE);
   }
@@ -96,7 +95,7 @@ std::vector<float> init_EMA(const std::vector<std::string> &stock_data) {
   std::vector<float> ema_vector{};
   ema_vector.push_back(ema);
 
-  for (short i = 10; i < stock_data.size(); ++i) {
+  for (i16 i = 10; i < stock_data.size(); ++i) {
     float price = split_line(stock_data.at(i)).at(CLOSE);
     ema = calculate_EMA(ema, price);
     ema_vector.push_back(ema);

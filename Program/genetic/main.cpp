@@ -1,3 +1,4 @@
+#include "../types.h"
 #include "genetic_util.h"
 #include "portfolio.h"
 #include "world.h"
@@ -7,11 +8,11 @@
 
 void print_portfolio(Portfolio *p, std::vector<std::string> tickets) {
   std::vector<float> props = p->get_stock_map();
-  short size = tickets.size();
+  i16 size = tickets.size();
 
   float sum = 0;
 
-  for (short i{}; i < size; ++i) {
+  for (i16 i{}; i < size; ++i) {
     std::cout << tickets.at(i) << ": " << props.at(i) << "\n";
     sum += props.at(i);
   }
@@ -21,12 +22,12 @@ void print_portfolio(Portfolio *p, std::vector<std::string> tickets) {
 }
 
 int main() {
-  short num_stocks = 30;
+  i16 num_stocks = 30;
 
   std::vector<std::string> tickets{};
   tickets.reserve(num_stocks);
 
-  for (int i = 0; i < num_stocks; ++i) {
+  for (i32 i = 0; i < num_stocks; ++i) {
     tickets.push_back("T" + std::to_string(i));
   }
 

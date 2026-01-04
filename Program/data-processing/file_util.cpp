@@ -1,11 +1,12 @@
 #include "file_util.h"
+#include "../types.h"
 #include "calculations.h"
 #include <algorithm>
 #include <fstream>
 #include <iostream>
 #include <sstream>
 
-constexpr short NUM_TICKETS = 500;
+constexpr i16 NUM_TICKETS = 500;
 
 /**
  * Format:
@@ -22,13 +23,13 @@ void create_csv(std::vector<std::vector<std::string>> &data) {
   cleaningData(data);
 
   file << "Ticket,Open,Close,High,Low,RSI,SMA,EMA" << '\n';
-  for (short i = 0; i < data.size(); ++i) {
+  for (i16 i = 0; i < data.size(); ++i) {
     const std::vector<std::string> vec = data.at(i);
     std::vector<float> rsi = initialize_RSI(vec);
     std::vector<float> sma = init_SMA(vec);
     std::vector<float> ema = init_EMA(vec);
 
-    for (short j = 14; j < vec.size(); ++j) {
+    for (i16 j = 14; j < vec.size(); ++j) {
       std::vector<double> line = split_line(vec.at(j));
       std::string new_line;
 
@@ -76,7 +77,7 @@ std::vector<std::vector<std::string>> read_stocks(const std::string &filepath) {
 }
 
 void cleaningData(std::vector<std::vector<std::string>> &data) {
-  for (short i = 0; i < data.size(); ++i) {
+  for (i16 i = 0; i < data.size(); ++i) {
     data.at(i).erase(data.at(i).begin());
     data.at(i).erase(data.at(i).begin());
   }

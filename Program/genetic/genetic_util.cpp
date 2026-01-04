@@ -1,18 +1,17 @@
 #include "genetic_util.h"
+#include "../types.h"
 #include <cmath>
-#include <cstdint>
 #include <cstdlib>
 #include <ctime>
 #include <random>
 #include <vector>
 
 constexpr float ALPHA = 0.5;
-constexpr int32_t DISTRiBUTION_INDEX =
-    10; // lower index equals greater diversity
+constexpr i32 DISTRiBUTION_INDEX = 10; // lower index equals greater diversity
 constexpr float MUTATION_PROBABILITY = 0.05; // low prob
 constexpr double POWER = 4.0 / (DISTRiBUTION_INDEX + 1);
 
-// constexpr short MAC_CACHE_LINE = 128;
+// constexpr i16 MAC_CACHE_LINE = 128;
 
 std::default_random_engine &get_engine() {
   static std::default_random_engine eng(std::random_device{}());
@@ -53,7 +52,7 @@ std::vector<float> simulated_binary_crossover(Portfolio *parent1,
                                               bool positive) {
   std::vector<float> new_props{};
 
-  short sign = positive ? 1 : -1;
+  i16 sign = positive ? 1 : -1;
   float mu = random_float();
   float beta{};
 
@@ -69,8 +68,8 @@ std::vector<float> simulated_binary_crossover(Portfolio *parent1,
 
   float sign_part = 1 + sign * beta;
 
-  short size = p1_props.size();
-  for (short i = 0; i < size; ++i) {
+  i32 size = p1_props.size();
+  for (i32 i = 0; i < size; ++i) {
     float p1_gene = sign_part * p1_props.at(i);
     float p2_gene = sign_part * p2_props.at(i);
 
@@ -97,8 +96,8 @@ std::vector<float> blend_crossover(Portfolio *parent1, Portfolio *parent2) {
 
   new_props.reserve(p1_props.size());
 
-  short size = p1_props.size();
-  for (short i = 0; i < size; ++i) {
+  i32 size = p1_props.size();
+  for (i32 i = 0; i < size; ++i) {
     float p1 = p1_props.at(i);
     float p2 = p2_props.at(i);
 
@@ -125,7 +124,7 @@ void normalize(std::vector<float> &child) {
     sum += f;
   }
 
-  for (short i = 0; i < child.size(); ++i) {
+  for (i16 i = 0; i < child.size(); ++i) {
     float new_prop = child.at(i) / sum;
     child[i] = new_prop;
   }
@@ -134,9 +133,9 @@ void normalize(std::vector<float> &child) {
 // if a gene is chosen to be mutated, just adding 8% to it; arbritary number,
 // change as you want
 void mutate(std::vector<float> child) {
-  short size = child.size();
+  i16 size = child.size();
 
-  for (short i{0}; i < size; ++i) {
+  for (i16 i{0}; i < size; ++i) {
     float chance = random_float();
 
     if (chance <= MUTATION_PROBABILITY) {
@@ -153,7 +152,7 @@ Portfolio *create_random_portfolio(const std::vector<std::string> &keys) {
   std::vector<float> props{};
   props.reserve(keys.size());
 
-  for (short i = 0; i < keys.size(); ++i) {
+  for (i16 i = 0; i < keys.size(); ++i) {
     float prop = random_float();
     props.push_back(prop);
   }
