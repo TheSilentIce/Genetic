@@ -69,7 +69,6 @@ std::vector<std::vector<std::string>> read_stocks(const std::string &filepath) {
     } else {
       data.push_back(std::move(a));
       a.clear();
-      break;
     }
   }
   data_file.close();

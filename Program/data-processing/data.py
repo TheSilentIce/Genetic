@@ -1,8 +1,7 @@
 import pandas as pd
 import yfinance as yf
 
-# tickers = ["AAPL", "MSFT", "AMZN", "NVDA", "GOOG", "META", "TSLA", "AMD", "BRK-A"]
-tickers = ["META", "AAPL", "AMZN", "NFLX", "GOOG"]
+tickers = ["AAPL", "MSFT", "AMZN", "NVDA", "GOOG", "META", "TSLA", "AMD", "BRK-A"]
 
 
 # convert into format:
@@ -11,7 +10,7 @@ tickers = ["META", "AAPL", "AMZN", "NFLX", "GOOG"]
 # Data,Data,Data,...
 # Intentional space
 
-df = yf.download(tickers, period="1y", group_by="ticker")
+df = yf.download(tickers, period="5y", group_by="ticker")
 rows = []
 
 for ticker in tickers:

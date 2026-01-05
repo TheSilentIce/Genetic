@@ -1,30 +1,70 @@
 import matplotlib.pyplot as plt
-import numpy as np
+import pandas as pd
 import torch
-import torch.nn as nn
+from sklearn.preprocessing import MinMaxScaler
+from torch import nn
+from torch.utils.data import Dataset
 
-np.random.seed(0)
-torch.manual_seed(0)
-
-t = np.linspace(0, 100, 1000)
-data = np.sin(t)
+df = pd.read_csv("./data/new_data.csv")
 
 
-def create_sequences(data, seq_length):
-    xs, ys = [], []
-    for i in range(len(data) - seq_length):
-        x = data[i : (i + seq_length)]
-        y = data[i + seq_length]
-        xs.append(x)
-        ys.append(y)
-    return np.array(xs), np.array(ys)
+class StockDataSet(Dataset):
+    def __init__(
+        self,
+        ticker_data,
+        seq_length=30,
+        train=True,
+        split_ratio=0.8,
+        scaler_X=None,
+        scaler_y=None,
+    ):
+        self.ticker = ticker_data["Ticket"].iloc[0]
+        self.seq_length = seq_length
 
+        # Split data by time (chronological split)
+        split_idx = int(len(ticker_data) * split_ratio)
 
-seq_length = 10
-X, y = create_sequences(data, seq_length)
+        if train:
+            data = ticker_data.iloc[:split_idx]  # First 80% for training
+        else:
+            data = ticker_data.iloc[split_idx:]  # Last 20% for testing
 
-trainX = torch.tensor(X[:, :, None], dtype=torch.float32)
-trainY = torch.tensor(y[:, None], dtype=torch.float32)
+        # Normalize data
+        feature_cols = ["Open", "High", "Low", "RSI", "SMA", "EMA"]
+
+        X_data = data[feature_cols].values
+        y_data = data["Close"].values.reshape(-1, 1)
+
+        if train:
+            # FIT scaler on training data only
+            self.scaler_X = MinMaxScaler()
+            self.scaler_y = MinMaxScaler()
+            X_scaled = self.scaler_X.fit_transform(X_data)
+            y_scaled = self.scaler_y.fit_transform(y_data)
+        else:
+            # USE the training scaler (don't fit on test data)
+            if scaler_X is None or scaler_y is None:
+                raise ValueError("Must provide scalers for test set")
+            self.scaler_X = scaler_X
+            self.scaler_y = scaler_y
+            X_scaled = self.scaler_X.transform(X_data)  # transform only
+            y_scaled = self.scaler_y.transform(y_data)  # transform only
+
+        # Create sequences
+        self.X = []
+        self.y = []
+        for i in range(len(X_scaled) - seq_length):
+            self.X.append(X_scaled[i : i + seq_length])
+            self.y.append(y_scaled[i + seq_length])
+
+        self.X = torch.FloatTensor(self.X)
+        self.y = torch.FloatTensor(self.y)
+
+    def __len__(self):
+        return len(self.X)
+
+    def __getitem__(self, idx):
+        return self.X[idx], self.y[idx]
 
 
 class LSTMModel(nn.Module):
@@ -35,53 +75,128 @@ class LSTMModel(nn.Module):
         self.lstm = nn.LSTM(input_dim, hidden_dim, layer_dim, batch_first=True)
         self.fc = nn.Linear(hidden_dim, output_dim)
 
-    def forward(self, x, h0=None, c0=None):
-        if (h0) is None or c0 is None:
-            h0 = torch.zeros(self.layer_dim, x.size(0), self.hidden_dim).to(x.device)
-            c0 = torch.zeros(self.layer_dim, x.size(0), self.hidden_dim).to(x.device)
-
-        out, (hn, cn) = self.lstm(x, (h0, c0))
+    def forward(self, x):
+        out, _ = self.lstm(x)
         out = self.fc(out[:, -1, :])
-        return out, hn, cn
+        return out
 
 
-model = LSTMModel(input_dim=1, hidden_dim=100, layer_dim=1, output_dim=1)
+# Create train and test datasets with proper scaler sharing
+train_datasets = {}
+test_datasets = {}
+
+for ticker, group in df.groupby("Ticket"):
+    if len(group) > 30:  # Need enough data for sequences
+        # Create training dataset (fits scaler)
+        train_ds = StockDataSet(group, seq_length=30, train=True, split_ratio=0.8)
+
+        # Create test dataset (uses training scaler)
+        test_ds = StockDataSet(
+            group,
+            seq_length=30,
+            train=False,
+            split_ratio=0.8,
+            scaler_X=train_ds.scaler_X,
+            scaler_y=train_ds.scaler_y,
+        )
+
+        train_datasets[ticker] = train_ds
+        test_datasets[ticker] = test_ds
+
+print(f"Training on {len(train_datasets)} stocks")
+
+# Model setup
+input_dim = 6
+model = LSTMModel(input_dim=input_dim, hidden_dim=50, layer_dim=2, output_dim=1)
 criterion = nn.MSELoss()
-optimizer = torch.optim.Adam(model.parameters(), lr=0.01)
+optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 
 num_epochs = 100
-h0, c0 = None, None
 
+# Training (ONLY on training data)
+print("\n=== Training ===")
 for epoch in range(num_epochs):
     model.train()
-    optimizer.zero_grad()
+    epoch_loss = 0.0
 
-    outputs, h0, c0 = model(trainX, h0, c0)
+    for ticker, dataset in train_datasets.items():
+        trainX = dataset.X
+        trainY = dataset.y
 
-    loss = criterion(outputs, trainY)
-    loss.backward()
-    optimizer.step()
+        optimizer.zero_grad()
+        outputs = model(trainX)
+        loss = criterion(outputs, trainY)
+        loss.backward()
+        optimizer.step()
 
-    h0, c0 = h0.detach(), c0.detach()
+        epoch_loss += loss.item()
 
     if (epoch + 1) % 10 == 0:
-        print(f"Epoch [{epoch+1} / {num_epochs}], Loss: {loss.item():.4f}")
+        avg_loss = epoch_loss / len(train_datasets)
+        print(f"Epoch [{epoch+1}/{num_epochs}], Avg Loss: {avg_loss:.4f}")
 
-
+# Evaluation on TEST data (data model has NEVER seen)
+print("\n=== Testing on Unseen Data ===")
 model.eval()
-predicted, _, _ = model(trainX, h0, c0)
+with torch.no_grad():
+    num_stocks = len(test_datasets)
+    fig, axes = plt.subplots(num_stocks, 1, figsize=(12, 5 * num_stocks))
 
-original = data[seq_length:]
-time_steps = np.arange(seq_length, len(data))
+    if num_stocks == 1:
+        axes = [axes]
 
-predicted[::30] += 0.2
-predicted[::70] -= 0.2
+    overall_errors = []
 
-plt.figure(figsize=(12, 6))
-plt.plot(time_steps, original, label="Original Data")
-plt.plot(time_steps, predicted.detach().numpy(), label="Predicted Data", linestyle="--")
-plt.title("LSTM Model Predictions vs. Original Data")
-plt.xlabel("Time Step")
-plt.ylabel("Value")
-plt.legend()
-plt.show()
+    for idx, (ticker, dataset) in enumerate(test_datasets.items()):
+        predictions = model(dataset.X)
+
+        # Inverse transform to get actual prices
+        pred_prices = dataset.scaler_y.inverse_transform(predictions.numpy())
+        actual_prices = dataset.scaler_y.inverse_transform(dataset.y.numpy())
+
+        print(f"\n{ticker}:")
+        print(f"  Test set size: {len(predictions)} predictions")
+        for i in range(min(10, len(predictions))):
+            pred_val = pred_prices[i][0]
+            actual_val = actual_prices[i][0]
+            error = abs(pred_val - actual_val)
+            error_pct = (error / actual_val) * 100
+            print(
+                f"  [{i}] Pred: ${pred_val:.2f}, Actual: ${actual_val:.2f}, Error: ${error:.2f} ({error_pct:.2f}%)"
+            )
+
+        # Calculate average error for this stock
+        all_errors = abs(pred_prices - actual_prices)
+        avg_error = all_errors.mean()
+        avg_error_pct = (all_errors / actual_prices * 100).mean()
+        print(f"  Average Error: ${avg_error:.2f} ({avg_error_pct:.2f}%)")
+
+        overall_errors.append(avg_error_pct)
+
+        # Plot
+        ax = axes[idx]
+        ax.plot(actual_prices, label="Actual", linewidth=2)
+        ax.plot(pred_prices, label="Predicted", linewidth=2, alpha=0.7)
+        ax.set_title(f"{ticker} - Test Error: {avg_error_pct:.2f}%")
+        ax.set_xlabel("Time Step")
+        ax.set_ylabel("Close Price ($)")
+        ax.legend()
+        ax.grid(True, alpha=0.3)
+
+    # Overall statistics
+    print(f"\n{'='*50}")
+    print(f"OVERALL TEST PERFORMANCE")
+    print(
+        f"Average Error Across All Stocks: {sum(overall_errors)/len(overall_errors):.2f}%"
+    )
+    print(f"Best Stock: {min(overall_errors):.2f}%")
+    print(f"Worst Stock: {max(overall_errors):.2f}%")
+    print(
+        f"Number of test predictions per stock: ~{len(test_datasets[list(test_datasets.keys())[0]].X)}"
+    )
+    print(f"{'='*50}")
+
+    plt.tight_layout()
+    plt.savefig("test_predictions.png", dpi=300, bbox_inches="tight")
+    print("\n✅ Plot saved as 'test_predictions.png'")
+    plt.show()

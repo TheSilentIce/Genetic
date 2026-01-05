@@ -12,3 +12,6 @@ create_new_data:
 	g++ -Wall -std=c++17 ./data-processing/*.cpp -o runner
 	./runner
 	mv new_data.csv ./data/
+
+p:
+	python3 ./lstm_model/main.py
