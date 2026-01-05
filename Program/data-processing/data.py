@@ -1,7 +1,19 @@
 import pandas as pd
 import yfinance as yf
 
-tickers = ["AAPL", "MSFT", "AMZN", "NVDA", "GOOG", "META", "TSLA", "AMD", "BRK-A"]
+tickers = [
+    "AAPL",
+    "MSFT",
+    "AMZN",
+    "NVDA",
+    "GOOG",
+    "META",
+    "TSLA",
+    "AMD",
+    "WFC",
+    "BAC",
+    "GS",
+]
 
 
 # convert into format:
