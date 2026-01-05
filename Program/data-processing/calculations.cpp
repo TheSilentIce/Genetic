@@ -108,3 +108,31 @@ float calculate_EMA(float ema, float price) {
   float b = ema * (1 - SMOOTHING_OVER_PERIOD);
   return a + b;
 }
+
+std::vector<float> init_SO(const std::vector<std::string> &stock_data) {
+  std::vector<float> so_vector{};
+
+  for (i16 i = 13; i < stock_data.size(); ++i) {
+    float so = calculate_SO(stock_data, i - 13);
+    so_vector.push_back(so);
+  }
+  return so_vector;
+}
+
+float calculate_SO(const std::vector<std::string> &stock_data, i16 beginning) {
+  double lowest{0};
+  double highest = std::numeric_limits<double>::lowest();
+
+  for (i16 i = beginning; i < beginning + 14; ++i) {
+    auto line = split_line(stock_data.at(i));
+    lowest = std::min(lowest, line.at(LOW));
+    highest = std::max(highest, line.at(HIGH));
+  }
+
+  double curr_close = split_line(stock_data.at(beginning + 13)).at(CLOSE);
+
+  if (highest == lowest)
+    return 0.0f;
+
+  return static_cast<float>((curr_close - lowest) / (highest - lowest) * 100.0);
+}

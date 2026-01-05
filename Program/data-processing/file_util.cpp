@@ -22,12 +22,13 @@ void create_csv(std::vector<std::vector<std::string>> &data) {
   std::vector<std::string> names = get_names(data);
   cleaningData(data);
 
-  file << "Ticket,Open,Close,High,Low,RSI,SMA,EMA" << '\n';
+  file << "Ticket,Open,Close,High,Low,RSI,SMA,EMA,SO" << '\n';
   for (i16 i = 0; i < data.size(); ++i) {
     const std::vector<std::string> vec = data.at(i);
     std::vector<float> rsi = initialize_RSI(vec);
     std::vector<float> sma = init_SMA(vec);
     std::vector<float> ema = init_EMA(vec);
+    std::vector<float> so = init_SO(vec);
 
     for (i16 j = 14; j < vec.size(); ++j) {
       std::vector<double> line = split_line(vec.at(j));
@@ -40,7 +41,8 @@ void create_csv(std::vector<std::vector<std::string>> &data) {
       new_line += std::to_string(line.at(LOW)) + ',';
       new_line += std::to_string(rsi.at(j - 14)) + ',';
       new_line += std::to_string(sma.at(j - 14)) + ',';
-      new_line += std::to_string(ema.at(j - 14));
+      new_line += std::to_string(ema.at(j - 14)) + ',';
+      new_line += std::to_string(so.at(j - 14));
       new_line += '\n';
 
       file << new_line;

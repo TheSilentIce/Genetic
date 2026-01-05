@@ -12,7 +12,7 @@ float calculate_SMA(i16 beg, i16 end,
                     const std::vector<std::string> &stock_data);
 std::vector<float> init_EMA(const std::vector<std::string> &stock_data);
 float calculate_EMA(float ema, float price);
-std::vector<float>
-calculate_STOCHASTIC_OSCILLATOR(const std::vector<std::string> &stock_data);
+std::vector<float> init_SO(const std::vector<std::string> &stock_data);
+float calculate_SO(const std::vector<std::string> &stock_data, i16 beginning);
 
 #endif
