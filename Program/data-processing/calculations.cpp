@@ -11,13 +11,11 @@ constexpr float SMOOTHING_OVER_PERIOD =
     SMOOTHING_FACTOR / (MOVING_AVERAGE_PERIOD + 1);
 
 /**
- * Format:
- * Date, Open, High, Low, Close, Volume
- * Line:
- 2025-11-28,277.260009765625,279.0,275.989990234375,278.8500061035156,20135600.0
-
+ * This method creates a vector of Relative Strength Indices(RSI) for each day
+ * We initialize the RSI as RSI is standardized as being a 2 week period
+ *
+ *
  */
-
 std::vector<float> initialize_RSI(const std::vector<std::string> &stock_data) {
   std::vector<float> rsi_vector{};
 
@@ -71,6 +69,9 @@ float calculate_RSI(float &avg_gain, float &avg_loss, float curr,
   return 100 - (100 / (1 + RS));
 }
 
+/**
+ * this method creates a vector for simple moving average
+ */
 std::vector<float> init_SMA(const std::vector<std::string> &stock_data) {
   std::vector<float> sma_vector{};
   for (i16 i = 9; i < stock_data.size(); ++i) {
@@ -80,6 +81,10 @@ std::vector<float> init_SMA(const std::vector<std::string> &stock_data) {
   return sma_vector;
 }
 
+/**
+ *  simple moving average is generally defined as the average price
+ *  over a 10 day period. However, this can be changed as you want.
+ */
 float calculate_SMA(i16 beg, i16 end,
                     const std::vector<std::string> &stock_data) {
   float sum = 0;
@@ -90,6 +95,13 @@ float calculate_SMA(i16 beg, i16 end,
   return sum / MOVING_AVERAGE_PERIOD;
 }
 
+/*
+ * This method generates a vector of exponential moving average(EMA)
+ * The difference between EMA and SMA is that EMA is that EMA gives a higher
+ * weightage to more recent prices.
+ * The idea is that stock prices are more influenced by their most recent
+ * prices, so we should give more importance to said recent prices
+ */
 std::vector<float> init_EMA(const std::vector<std::string> &stock_data) {
   float ema = calculate_SMA(0, 9, stock_data);
   std::vector<float> ema_vector{};
@@ -103,12 +115,37 @@ std::vector<float> init_EMA(const std::vector<std::string> &stock_data) {
   return ema_vector;
 }
 
+/**
+ * Information taken from Investpedia's article on EMAs
+ * The initial EMA is defined as just the simple moving average of first 10 days
+ * The formula is as follows:
+ * EMA_today = (Value_today * (Smoothing factor / (1 + DAYS))) +
+ * EMA_yesterday * (1 - (Smoothing factor / (1 + DAYS)))
+ *
+ * Smoothing factor: This is the weighting factor if you will
+ * Set to 2 per Investpedia's article, however can be changed as you will
+ * Higher Smoothing factor means more weightage towards recent prices
+ *
+ * As for the period:
+ * 50-200 days are preferred by long-term investors
+ * 8-20 days are preferred by short-term investors
+ * For now, we set this to mirror SMA, which for now is 10
+ * Can be adjusted
+ */
 float calculate_EMA(float ema, float price) {
   float a = price * SMOOTHING_OVER_PERIOD;
   float b = ema * (1 - SMOOTHING_OVER_PERIOD);
   return a + b;
 }
 
+/*
+ * This method creates a vector of stochastic oscillations
+ * Stochastic oscillation is a momentum indicator, like RSI
+ * The difference between the two is that stochastic oscillation is based on the
+ * idea that the closing prices move in the same direction as the current trend
+ * RSI measures velocity of price movements , stochastic oscillation does that
+ * within a range and with the assumption above.
+ */
 std::vector<float> init_SO(const std::vector<std::string> &stock_data) {
   std::vector<float> so_vector{};
 
@@ -119,6 +156,23 @@ std::vector<float> init_SO(const std::vector<std::string> &stock_data) {
   return so_vector;
 }
 
+/**
+ *Stochastic oscillation actually has two "lines":
+ *%K, which is what this method implements, also known as fast stochastic
+ * indicator %D is the slow stochastic indicator The difference is that fast is
+ * more sensitive
+ * It's good to have both
+ *
+ * For the range, it's typically 2 weeks, which is what we hard-coded here
+ * Can of course be changed
+ *
+ * HP - highest price over range
+ * LP - lowest price over range
+ * C - Closing Price
+ * %K - Fast indicator
+ *
+ * %K = 100 * (C - LP) / (HP - LP)
+ */
 float calculate_SO(const std::vector<std::string> &stock_data, i16 beginning) {
   double lowest{0};
   double highest = std::numeric_limits<double>::lowest();

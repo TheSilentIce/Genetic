@@ -9,13 +9,17 @@
 constexpr i16 NUM_TICKETS = 500;
 
 /**
- * Format:
- * Date, Open, High, Low, Close, Volume
- * Line:
- 2025-11-28,277.260009765625,279.0,275.989990234375,278.8500061035156,20135600.0
-
+ * this generates the new_csv file for the LSTM to read from
+ *The first line added to the file is the column names
+ * Essentially we iterate over each stock and over each of their lines
+ * the various factors are calculated accordingly and added
+ *
+ * You may notice that we start reading lines from index 14
+ * This is because for a lot of the financial indicators, they require an
+ * initial 14 days worth of data
+ * Which means, we dont have the respective data for those first 14 days
+ * thus, they are skipped
  */
-
 void create_csv(std::vector<std::vector<std::string>> &data) {
   std::ofstream file;
   file.open("new_data.csv");
@@ -52,6 +56,10 @@ void create_csv(std::vector<std::vector<std::string>> &data) {
   file.close();
 }
 
+/**
+ *It reads the stocks from data.csv
+ * exciting
+ */
 std::vector<std::vector<std::string>> read_stocks(const std::string &filepath) {
   std::ifstream data_file(filepath);
   if (!data_file.is_open()) {
@@ -77,6 +85,11 @@ std::vector<std::vector<std::string>> read_stocks(const std::string &filepath) {
   return data;
 }
 
+/**
+ * this just gets rid of the name and
+ * yfinance's header:
+        Date,Open,High,Low,Close,Volume
+ */
 void cleaningData(std::vector<std::vector<std::string>> &data) {
   for (i16 i = 0; i < data.size(); ++i) {
     data.at(i).erase(data.at(i).begin());
@@ -100,6 +113,11 @@ get_names(const std::vector<std::vector<std::string>> &data) {
   return tickets;
 }
 
+/**
+ * Splits each day's data into respective information represented as a float
+ * the indicies to access said data can be found in
+ * file_util.h
+ */
 std::vector<double> split_line(std::string line) {
 
   std::vector<double> info{};

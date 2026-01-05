@@ -139,7 +139,7 @@ void mutate(std::vector<float> child) {
     float chance = random_float();
 
     if (chance <= MUTATION_PROBABILITY) {
-      child[i] = child[i] + 0.08;
+      child[i] = child[i] + 0.08; //<=== Mutation
     }
   }
 
