@@ -29,7 +29,7 @@ class StockDataSet(Dataset):
             data = ticker_data.iloc[split_idx:]  # Last 20% for testing
 
         # Normalize data
-        feature_cols = ["Open", "High", "Low", "RSI", "SMA", "EMA"]
+        feature_cols = ["Open", "High", "Low", "RSI", "SMA", "EMA", "SO"]
 
         X_data = data[feature_cols].values
         y_data = data["Close"].values.reshape(-1, 1)
