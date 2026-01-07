@@ -175,7 +175,8 @@ std::vector<float> init_SO(const std::vector<std::string> &stock_data) {
  */
 float calculate_SO(const std::vector<std::string> &stock_data, i16 beginning) {
   double lowest{0};
-  double highest = std::numeric_limits<double>::lowest();
+  // double highest = std::numeric_limits<double>::lowest();
+  double highest = 1000000000;
 
   for (i16 i = beginning; i < beginning + 14; ++i) {
     auto line = split_line(stock_data.at(i));

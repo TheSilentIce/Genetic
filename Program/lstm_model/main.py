@@ -5,8 +5,7 @@ from sklearn.preprocessing import MinMaxScaler
 from torch import nn
 from torch.utils.data import Dataset
 
-df = pd.read_csv("./data/new_data.csv")
-
+df = pd.read_csv("../data/new_data.csv")
 
 class StockDataSet(Dataset):
     def __init__(
@@ -106,7 +105,7 @@ for ticker, group in df.groupby("Ticket"):
 print(f"Training on {len(train_datasets)} stocks")
 
 # Model setup
-input_dim = 6
+input_dim = 7
 model = LSTMModel(input_dim=input_dim, hidden_dim=50, layer_dim=2, output_dim=1)
 criterion = nn.MSELoss()
 optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
