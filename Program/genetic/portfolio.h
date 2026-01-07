@@ -1,4 +1,5 @@
 #include <map>
+#include <vector>
 #ifndef PORTFOLIO_H
 #define PORTFOLIO_H
 

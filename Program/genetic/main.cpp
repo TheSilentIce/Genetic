@@ -5,6 +5,8 @@
 #include <chrono>
 #include <iostream>
 #include <map>
+#include <string>
+#include <vector>
 
 void print_portfolio(Portfolio *p, std::vector<std::string> tickets) {
   std::vector<float> props = p->get_stock_map();
