@@ -2,5 +2,6 @@
 *.csv
 *.exe
 *.png
+build/
 algo
 # .DS_STORE
