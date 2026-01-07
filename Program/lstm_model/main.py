@@ -7,6 +7,7 @@ from torch.utils.data import Dataset
 
 df = pd.read_csv("../data/new_data.csv")
 
+
 class StockDataSet(Dataset):
     def __init__(
         self,
