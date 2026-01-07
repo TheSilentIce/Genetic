@@ -6,4 +6,5 @@
 build/
 *.lock
 algo
+.cache/
 # .DS_STORE
