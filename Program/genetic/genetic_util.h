@@ -1,6 +1,7 @@
 #ifndef GENETIC_UTIL_H
 #define GENETIC_UTIL_H
 #include "portfolio.h"
+#include <string>
 #include <vector>
 
 std::vector<float> simulated_binary_crossover(Portfolio *parent1,

@@ -5,6 +5,9 @@
 #include <fstream>
 #include <iostream>
 #include <sstream>
+#include <string>
+#include <utility>
+#include <vector>
 
 constexpr i16 NUM_TICKETS = 500;
 
@@ -119,7 +122,6 @@ get_names(const std::vector<std::vector<std::string>> &data) {
  * file_util.h
  */
 std::vector<double> split_line(std::string line) {
-
   std::vector<double> info{};
   info.reserve(5);
   std::stringstream ss(line);

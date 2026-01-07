@@ -4,6 +4,8 @@
 #include <cstdint>
 #include <iostream>
 #include <random>
+#include <string>
+#include <vector>
 
 // constexpr short GENERATIONS{1000};
 constexpr i32 POPULATION{100'000};

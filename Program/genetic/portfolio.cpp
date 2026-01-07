@@ -1,4 +1,5 @@
 #include "portfolio.h"
+#include <vector>
 
 Portfolio::Portfolio(std::vector<float> stock_map) {
   this->stock_map = stock_map;

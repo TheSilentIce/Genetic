@@ -1,6 +1,7 @@
 #ifndef WORLD_H
 #define WORLD_H
 #include "portfolio.h"
+#include <string>
 #include <vector>
 
 Portfolio *revolve();

@@ -2,6 +2,7 @@
 #include "file_util.h"
 #include <algorithm>
 #include <string>
+#include <vector>
 
 // constexpr i16 NUM_TICKETS = 500;
 constexpr i16 INITIAL_DAYS = 14;

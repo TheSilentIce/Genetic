@@ -4,6 +4,7 @@
 #include <cstdlib>
 #include <ctime>
 #include <random>
+#include <string>
 #include <vector>
 
 constexpr float ALPHA = 0.5;
