@@ -1,4 +1,6 @@
 *.o
 *.csv
+*.exe
+*.png
 algo
 # .DS_STORE
