@@ -149,7 +149,7 @@ void mutate(std::vector<float> child) {
 
 Portfolio create_child(std::vector<float> child) { return Portfolio(child); }
 
-Portfolio *create_random_portfolio(const std::vector<std::string> &keys) {
+Portfolio create_random_portfolio(const std::vector<std::string> &keys) {
   std::vector<float> props{};
   props.reserve(keys.size());
 
@@ -158,6 +158,6 @@ Portfolio *create_random_portfolio(const std::vector<std::string> &keys) {
     props.push_back(prop);
   }
   normalize(props);
-  Portfolio *port = new Portfolio(props);
+  Portfolio port = Portfolio(props);
   return port;
 }

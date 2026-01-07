@@ -41,7 +41,6 @@ int main() {
       std::chrono::duration_cast<std::chrono::milliseconds>(end - start)
           .count();
 
-  std::vector<Portfolio *> props = get_pop();
   // Portfolio *p = props.at(0);
   // print_portfolio(p, tickets);
 
