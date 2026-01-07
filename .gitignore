@@ -4,5 +4,6 @@
 *.png
 .vs/
 build/
+*.lock
 algo
 # .DS_STORE

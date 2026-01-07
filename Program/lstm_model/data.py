@@ -1,7 +1,21 @@
+import os.path
+
 import pandas as pd
 import yfinance as yf
-import os.path
-tickers = ["AAPL", "MSFT", "AMZN", "NVDA", "GOOG", "META", "TSLA", "AMD", "GS", "JPM", "BK"]
+
+tickers = [
+    "AAPL",
+    "MSFT",
+    "AMZN",
+    "NVDA",
+    "GOOG",
+    "META",
+    "TSLA",
+    "AMD",
+    "GS",
+    "JPM",
+    "BK",
+]
 
 
 # convert into format:
@@ -10,7 +24,7 @@ tickers = ["AAPL", "MSFT", "AMZN", "NVDA", "GOOG", "META", "TSLA", "AMD", "GS", 
 # Data,Data,Data,...
 # Intentional space
 
-df = yf.download(tickers, period="5y", group_by="ticker")
+df = yf.download(tickers, period="max", group_by="ticker")
 rows = []
 
 for ticker in tickers:
