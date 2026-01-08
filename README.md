@@ -17,17 +17,15 @@ cmake --build build
 ```
 
 ## How to run
-First, you must get initial data
-From root directory:
+First, you must get initial data 
 ```
 cd Program/lstm_model/
 uv run data.py
 ```
 
-Then, run the runner file in the build directory(For windows, its an exe)
+Then, run the runner file in the build directory(for Windows, its an exe)
 
-Afterwards:
-From root directory
+To run LSTM:
 ```
 cd Program/lstm_model/
 uv run main.py
