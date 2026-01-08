@@ -24,7 +24,7 @@ tickers = [
 # Data,Data,Data,...
 # Intentional space
 
-df = yf.download(tickers, period="max", group_by="ticker")
+df = yf.download(tickers, period="5y", group_by="ticker")
 rows = []
 
 for ticker in tickers:

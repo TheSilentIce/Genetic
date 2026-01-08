@@ -24,8 +24,11 @@ constexpr i16 NUM_TICKETS = 500;
  * thus, they are skipped
  */
 void create_csv(std::vector<std::vector<std::string>> &data) {
+  std::filesystem::path fp =
+      std::filesystem::path(PROJECT_ROOT) / "Program" / "data" / "new_data.csv";
+
   std::ofstream file;
-  file.open("new_data.csv");
+  file.open(fp.string());
   std::vector<std::string> names = get_names(data);
   cleaningData(data);
 
