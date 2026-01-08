@@ -135,6 +135,33 @@ for epoch in range(num_epochs):
         avg_loss = epoch_loss / len(train_datasets)
         print(f"Epoch [{epoch+1}/{num_epochs}], Avg Loss: {avg_loss:.4f}")
 
+# ============== SAVE MODEL ==============
+# Save the complete model checkpoint
+checkpoint = {
+    "model_state_dict": model.state_dict(),
+    "optimizer_state_dict": optimizer.state_dict(),
+    "input_dim": input_dim,
+    "hidden_dim": 50,
+    "layer_dim": 2,
+    "output_dim": 1,
+    "num_epochs": num_epochs,
+    "scalers": {
+        ticker: {
+            "scaler_X": train_datasets[ticker].scaler_X,
+            "scaler_y": train_datasets[ticker].scaler_y,
+        }
+        for ticker in train_datasets.keys()
+    },
+}
+
+torch.save(checkpoint, "stock_lstm_model.pth")
+print("\n✅ Model saved as 'stock_lstm_model.pth'")
+
+# Also save just the model weights (lighter file)
+torch.save(model.state_dict(), "stock_lstm_weights.pth")
+print("✅ Model weights saved as 'stock_lstm_weights.pth'")
+# ========================================
+
 # Evaluation on TEST data (data model has NEVER seen)
 print("\n=== Testing on Unseen Data ===")
 model.eval()
