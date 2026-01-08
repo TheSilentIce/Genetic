@@ -63,7 +63,7 @@ void create_csv(std::vector<std::vector<std::string>> &data) {
  *It reads the stocks from data.csv
  * exciting
  */
-std::vector<std::vector<std::string>> read_stocks(std::string filepath) {
+std::vector<std::vector<std::string>> read_stocks(const std::string &filepath) {
   std::ifstream data_file(filepath);
   if (!data_file.is_open()) {
     std::cerr << "File not Open" << filepath << '\n';

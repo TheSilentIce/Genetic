@@ -10,7 +10,8 @@ int main() {
 
   std::filesystem::path filepath =
       std::filesystem::path(PROJECT_ROOT) / "Program" / "data" / "data.csv";
-  auto data = read_stocks(filepath);
+
+  auto data = read_stocks(filepath.string());
 
   create_csv(data);
 
