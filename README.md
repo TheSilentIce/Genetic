@@ -6,3 +6,10 @@
 - CMake
 - Python
 - uv
+
+## How to run
+In root directory, run:
+
+```bash
+cmake -B build
+cmake --build build
