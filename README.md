@@ -1,4 +1,5 @@
 # Project Genetic
+Portfolio Optimization using Genetic Algorithm
 
 ## Dependencies
 
@@ -32,4 +33,14 @@ cd Program/lstm_model/
 uv run main.py
 ```
 
+## How it works
+A Long Short-Term Memory model is trained on past historical data.
+Example inputs are opening price and Stochastic Oscillation
+
+It generates a prediction of prices for a set time interval.
+
+The Genetic Algorithm then generates a portfolio based on those prices as well as other factors(risk/reward/etc..)
+
+## Future
+Implementing Metal and CUDA for GPU acceleration
 
