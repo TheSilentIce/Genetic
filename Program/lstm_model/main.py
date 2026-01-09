@@ -40,14 +40,16 @@ class StockDataSet(Dataset):
             "EMA",
             "%K",
             "%D",
-        ]
+        ] #Missing close - Now I know why
+        # Basically features are X / Input to ML model
+        # Output is predicted close price
 
         X_data = data[feature_cols].values
         y_data = data["Close"].values.reshape(-1, 1)
 
         if train:
             # FIT scaler on training data only
-            self.scaler_X = MinMaxScaler()
+            self.scaler_X = MinMaxScaler() #scales to 0-1 range by subtracting the min from each value and dividing by range of X values. 
             self.scaler_y = MinMaxScaler()
             X_scaled = self.scaler_X.fit_transform(X_data)
             y_scaled = self.scaler_y.fit_transform(y_data)
@@ -116,8 +118,8 @@ for ticker, group in df.groupby("Ticket"):
 print(f"Training on {len(train_datasets)} stocks")
 
 # Model setup
-input_dim = 9
-model = LSTMModel(input_dim=input_dim, hidden_dim=100, layer_dim=2, output_dim=1)
+input_dim = 7
+model = LSTMModel(input_dim=input_dim, hidden_dim=50, layer_dim=2, output_dim=1)
 criterion = nn.MSELoss()
 optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 
