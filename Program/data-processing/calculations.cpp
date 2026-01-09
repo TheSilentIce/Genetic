@@ -1,6 +1,7 @@
 #include "calculations.h"
 #include "file_util.h"
 #include <algorithm>
+#include <limits>
 #include <string>
 #include <vector>
 
@@ -147,11 +148,11 @@ float calculate_EMA(float ema, float price) {
  * RSI measures velocity of price movements , stochastic oscillation does that
  * within a range and with the assumption above.
  */
-std::vector<float> init_SO(const std::vector<std::string> &stock_data) {
+std::vector<float> init_SO_K(const std::vector<std::string> &stock_data) {
   std::vector<float> so_vector{};
 
   for (i16 i = 13; i < stock_data.size(); ++i) {
-    float so = calculate_SO(stock_data, i - 13);
+    float so = calculate_SO_K(stock_data, i - 13);
     so_vector.push_back(so);
   }
   return so_vector;
@@ -174,10 +175,10 @@ std::vector<float> init_SO(const std::vector<std::string> &stock_data) {
  *
  * %K = 100 * (C - LP) / (HP - LP)
  */
-float calculate_SO(const std::vector<std::string> &stock_data, i16 beginning) {
-  double lowest{0};
-  // double highest = std::numeric_limits<double>::lowest();
-  double highest = 1000000000;
+float calculate_SO_K(const std::vector<std::string> &stock_data,
+                     i16 beginning) {
+  double lowest = std::numeric_limits<double>::max();
+  double highest{0};
 
   for (i16 i = beginning; i < beginning + 14; ++i) {
     auto line = split_line(stock_data.at(i));
@@ -191,4 +192,24 @@ float calculate_SO(const std::vector<std::string> &stock_data, i16 beginning) {
     return 0.0f;
 
   return static_cast<float>((curr_close - lowest) / (highest - lowest) * 100.0);
+}
+
+std::vector<float> init_SO_D(const std::vector<float> &k_data) {
+  std::vector<float> d_data{};
+
+  for (i16 i{2}; i < k_data.size(); ++i) {
+    float d = calculate_SO_D(k_data, i);
+    d_data.push_back(d);
+  }
+  return d_data;
+}
+
+float calculate_SO_D(const std::vector<float> &k_data, i16 start) {
+  float sum{0};
+
+  sum += k_data.at(start);
+  sum += k_data.at(start - 1);
+  sum += k_data.at(start - 2);
+
+  return sum /= 3;
 }

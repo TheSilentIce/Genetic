@@ -30,7 +30,17 @@ class StockDataSet(Dataset):
             data = ticker_data.iloc[split_idx:]  # Last 20% for testing
 
         # Normalize data
-        feature_cols = ["Open", "High", "Low", "RSI", "SMA", "EMA", "SO"]
+        feature_cols = [
+            "Open",
+            "High",
+            "Low",
+            "Volume",
+            "RSI",
+            "SMA",
+            "EMA",
+            "%K",
+            "%D",
+        ]
 
         X_data = data[feature_cols].values
         y_data = data["Close"].values.reshape(-1, 1)
@@ -106,8 +116,8 @@ for ticker, group in df.groupby("Ticket"):
 print(f"Training on {len(train_datasets)} stocks")
 
 # Model setup
-input_dim = 7
-model = LSTMModel(input_dim=input_dim, hidden_dim=50, layer_dim=2, output_dim=1)
+input_dim = 9
+model = LSTMModel(input_dim=input_dim, hidden_dim=100, layer_dim=2, output_dim=1)
 criterion = nn.MSELoss()
 optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 

@@ -26,19 +26,22 @@ constexpr i16 NUM_TICKETS = 500;
 void create_csv(std::vector<std::vector<std::string>> &data) {
   std::filesystem::path fp =
       std::filesystem::path(PROJECT_ROOT) / "Program" / "data" / "new_data.csv";
+  std::cout << "csv" << '\n';
 
   std::ofstream file;
   file.open(fp.string());
   std::vector<std::string> names = get_names(data);
   cleaningData(data);
 
-  file << "Ticket,Open,Close,High,Low,RSI,SMA,EMA,SO" << '\n';
+  file << "Ticket,Open,Close,High,Low,Volume,RSI,SMA,EMA,%K,%D" << '\n';
   for (i16 i = 0; i < data.size(); ++i) {
     const std::vector<std::string> vec = data.at(i);
+
     std::vector<float> rsi = initialize_RSI(vec);
     std::vector<float> sma = init_SMA(vec);
     std::vector<float> ema = init_EMA(vec);
-    std::vector<float> so = init_SO(vec);
+    std::vector<float> so_k = init_SO_K(vec);
+    std::vector<float> so_d = init_SO_D(so_k);
 
     for (i16 j = 14; j < vec.size(); ++j) {
       std::vector<double> line = split_line(vec.at(j));
@@ -49,11 +52,18 @@ void create_csv(std::vector<std::vector<std::string>> &data) {
       new_line += std::to_string(line.at(CLOSE)) + ',';
       new_line += std::to_string(line.at(HIGH)) + ',';
       new_line += std::to_string(line.at(LOW)) + ',';
+      new_line += std::to_string(line.at(VOLUME)) + ',';
       new_line += std::to_string(rsi.at(j - 14)) + ',';
       new_line += std::to_string(sma.at(j - 14)) + ',';
       new_line += std::to_string(ema.at(j - 14)) + ',';
-      new_line += std::to_string(so.at(j - 14));
+      new_line += std::to_string(so_k.at(j - 14)) + ',';
+      if (j - 14 < so_d.size() - 1) {
+        new_line += std::to_string(so_d.at(j - 14));
+      } else {
+        new_line += std::to_string(so_d.at(so_d.size() - 1));
+      }
       new_line += '\n';
+      std::cout << new_line;
 
       file << new_line;
     }

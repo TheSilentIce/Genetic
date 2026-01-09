@@ -12,7 +12,9 @@ float calculate_SMA(i16 beg, i16 end,
                     const std::vector<std::string> &stock_data);
 std::vector<float> init_EMA(const std::vector<std::string> &stock_data);
 float calculate_EMA(float ema, float price);
-std::vector<float> init_SO(const std::vector<std::string> &stock_data);
-float calculate_SO(const std::vector<std::string> &stock_data, i16 beginning);
+std::vector<float> init_SO_K(const std::vector<std::string> &stock_data);
+float calculate_SO_K(const std::vector<std::string> &stock_data, i16 beginning);
+std::vector<float> init_SO_D(const std::vector<float> &k_data);
+float calculate_SO_D(const std::vector<float> &k_data, i16 start);
 
 #endif

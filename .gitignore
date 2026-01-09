@@ -7,4 +7,5 @@ build/
 *.lock
 algo
 .cache/
-# .DS_STORE
+.DS_STORE
+*.pth
