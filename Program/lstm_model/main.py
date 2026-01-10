@@ -54,7 +54,7 @@ class StockDataSet(Dataset):
         # Output is predicted close price
 
         X_data = data[feature_cols].values
-        y_data = data["Close"].values.reshape(-1, 1)
+        y_data = data["Close"].values.reshape(-1, 1) #close values
 
         if train:
             # FIT scaler on training data only
