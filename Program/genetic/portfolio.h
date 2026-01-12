@@ -6,10 +6,12 @@
 class Portfolio {
 private:
   std::vector<float> stock_map;
+  double value;
 
 public:
   Portfolio(std::vector<float> stock_map);
   const std::vector<float> &get_stock_map() const;
+  double &get_porfolio_balance();
 };
 
 #endif
