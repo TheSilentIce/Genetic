@@ -1,3 +1,5 @@
+import time
+
 import matplotlib.pyplot as plt
 import pandas as pd
 import torch
@@ -5,7 +7,14 @@ from sklearn.preprocessing import MinMaxScaler
 from torch import nn
 from torch.utils.data import Dataset
 
+start_time = time.time()
+
+
 df = pd.read_csv("../data/new_data.csv")
+gpu = torch.device("cpu")
+
+if torch.backends.mps.is_available():
+    gpu = torch.device("mps")
 
 
 class StockDataSet(Dataset):
@@ -40,7 +49,7 @@ class StockDataSet(Dataset):
             "EMA",
             "%K",
             "%D",
-        ] #Missing close - Now I know why
+        ]  # Missing close - Now I know why
         # Basically features are X / Input to ML model
         # Output is predicted close price
 
@@ -49,7 +58,9 @@ class StockDataSet(Dataset):
 
         if train:
             # FIT scaler on training data only
-            self.scaler_X = MinMaxScaler() #scales to 0-1 range by subtracting the min from each value and dividing by range of X values. 
+            self.scaler_X = (
+                MinMaxScaler()
+            )  # scales to 0-1 range by subtracting the min from each value and dividing by range of X values.
             self.scaler_y = MinMaxScaler()
             X_scaled = self.scaler_X.fit_transform(X_data)
             y_scaled = self.scaler_y.fit_transform(y_data)
@@ -69,8 +80,10 @@ class StockDataSet(Dataset):
             self.X.append(X_scaled[i : i + seq_length])
             self.y.append(y_scaled[i + seq_length])
 
-        self.X = torch.FloatTensor(self.X)
-        self.y = torch.FloatTensor(self.y)
+        # self.X = torch.FloatTensor(self.X)
+        # self.y = torch.FloatTensor(self.y)
+        self.X = torch.tensor(self.X, dtype=torch.float32, device=gpu)
+        self.y = torch.tensor(self.y, dtype=torch.float32, device=gpu)
 
     def __len__(self):
         return len(self.X)
@@ -118,8 +131,9 @@ for ticker, group in df.groupby("Ticket"):
 print(f"Training on {len(train_datasets)} stocks")
 
 # Model setup
-input_dim = 7
+input_dim = 9
 model = LSTMModel(input_dim=input_dim, hidden_dim=50, layer_dim=2, output_dim=1)
+model = model.to(gpu)
 criterion = nn.MSELoss()
 optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 
@@ -190,8 +204,8 @@ with torch.no_grad():
         predictions = model(dataset.X)
 
         # Inverse transform to get actual prices
-        pred_prices = dataset.scaler_y.inverse_transform(predictions.numpy())
-        actual_prices = dataset.scaler_y.inverse_transform(dataset.y.numpy())
+        pred_prices = dataset.scaler_y.inverse_transform(predictions.cpu().numpy())
+        actual_prices = dataset.scaler_y.inverse_transform(dataset.y.cpu().numpy())
 
         print(f"\n{ticker}:")
         print(f"  Test set size: {len(predictions)} predictions")
@@ -223,6 +237,10 @@ with torch.no_grad():
         ax.grid(True, alpha=0.3)
 
     # Overall statistics
+    end_time = time.time()
+    elapse = end_time - start_time
+    print(f"Elapsed time: {elapse:.6f} seconds")
+
     print(f"\n{'='*50}")
     print(f"OVERALL TEST PERFORMANCE")
     print(
