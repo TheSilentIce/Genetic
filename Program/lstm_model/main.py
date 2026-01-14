@@ -7,7 +7,6 @@ from torch.utils.data import Dataset
 
 df = pd.read_csv("../data/new_data.csv")
 
-
 class StockDataSet(Dataset):
     def __init__(
         self,
@@ -121,7 +120,7 @@ print(f"Training on {len(train_datasets)} stocks")
 input_dim = 7
 model = LSTMModel(input_dim=input_dim, hidden_dim=50, layer_dim=2, output_dim=1)
 criterion = nn.MSELoss()
-optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
+optimizer = torch.optim.Adam(model.parameters(), lr=0.001) # manipulate this and epoch and hidden dimension
 
 num_epochs = 100
 
