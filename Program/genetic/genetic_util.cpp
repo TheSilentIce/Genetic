@@ -1,5 +1,9 @@
+#define NS_PRIVATE_IMPLEMENTATION
+#define CA_PRIVATE_IMPLEMENTATION
+#define MTL_PRIVATE_IMPLEMENTATION
 #include "genetic_util.h"
 #include "../types.h"
+#include <Metal/Metal.hpp>
 #include <cmath>
 #include <cstdlib>
 #include <ctime>
@@ -15,6 +19,7 @@ constexpr double POWER = 4.0 / (DISTRiBUTION_INDEX + 1);
 // constexpr i16 MAC_CACHE_LINE = 128;
 
 std::default_random_engine &get_engine() {
+
   static std::default_random_engine eng(std::random_device{}());
   return eng;
 }
