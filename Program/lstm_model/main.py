@@ -16,7 +16,6 @@ gpu = torch.device("cpu")
 if torch.backends.mps.is_available():
     gpu = torch.device("mps")
 
-
 class StockDataSet(Dataset):
     def __init__(
         self,
@@ -135,7 +134,7 @@ input_dim = 9
 model = LSTMModel(input_dim=input_dim, hidden_dim=50, layer_dim=2, output_dim=1)
 model = model.to(gpu)
 criterion = nn.MSELoss()
-optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
+optimizer = torch.optim.Adam(model.parameters(), lr=0.001) # manipulate this and epoch and hidden dimension
 
 num_epochs = 100
 
