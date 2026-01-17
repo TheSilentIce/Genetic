@@ -1,24 +1,28 @@
+
 #include <metal_stdlib>
 using namespace metal;
 
-inline uint hash(uint x) {
-    x ^= x >> 16;
-    x *= 0x7feb352d;
-    x ^= x >> 15;
-    x *= 0x846ca68b;
-    x ^= x >> 16;
-    return x;
+uint rand_xorshift(thread uint &rng_state) {
+    rng_state ^= (rng_state << 13);
+    rng_state ^= (rng_state >> 17);
+    rng_state ^= (rng_state << 5);
+    return rng_state;
 }
 
-inline float rand01(uint seed) {
-    return float(hash(seed)) / float(0xffffffff);
+kernel void create_random_portfolios_batched(device float* arr [[buffer(0)]],
+                                             uint id [[thread_position_in_grid]]) {
+    const uint SIZE = 11; // same as host
+
+    // Each thread is one portfolio
+    uint rng_state = id;
+
+    for (uint j = 0; j < SIZE; ++j) {
+        // warm up RNG
+        rand_xorshift(rng_state);
+        rand_xorshift(rng_state);
+
+        float f = float(rand_xorshift(rng_state)) * (1.0 / 4294967296.0);
+        arr[id * SIZE + j] = f;
+    }
 }
 
-kernel void addition_compute_function(constant long *arr1        [[ buffer(0) ]],
-                                      constant long *arr2        [[ buffer(1) ]],
-                                      device   long *resultArray [[ buffer(2) ]],
-                                               uint   index [[ thread_position_in_grid ]]) {
-    
-    float val = float(arr1[index]) * float(arr2[index]) * rand01(index);
-    resultArray[index] = uint64_t(val);
-}

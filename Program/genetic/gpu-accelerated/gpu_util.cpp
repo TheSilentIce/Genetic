@@ -1,114 +1,79 @@
-//
-//  main.cpp
-//  gpu-acceleration
-//
-//  Created by Srikar Yadlapati on 1/15/26.
-//
-
-#define NS_PRIVATE_IMPLEMENTATION
-#define CA_PRIVATE_IMPLEMENTATION
-#define MTL_PRIVATE_IMPLEMENTATION
-#include <Metal/Metal.hpp>
+#include "gpu_util.h"
+#include "../portfolio.h"
 #include <chrono>
+#include <cstring>
 #include <iostream>
-#include <vector>
 
-#define COUNT 100'000'000 // scalable
-
-// CPU-side hash RNG
-inline uint hash(uint x) {
-  x ^= x >> 16;
-  x *= 0x7feb352d;
-  x ^= x >> 15;
-  x *= 0x846ca68b;
-  x ^= x >> 16;
-  return x;
+MTL::Device *create_device() { return MTL::CreateSystemDefaultDevice(); }
+MTL::CommandQueue *create_queue(MTL::Device *device) {
+  return device->newCommandQueue();
 }
 
-inline float rand01(uint seed) { return float(hash(seed)) / float(0xffffffff); }
-
-// Initialize array
-std::vector<uint64_t> init_arr() {
-  std::vector<uint64_t> arr(COUNT);
-  for (uint64_t i = 0; i < COUNT; ++i)
-    arr[i] = i + 1;
-  return arr;
-}
-
-// CPU computation
-void cpu_compute(const std::vector<uint64_t> &arr1,
-                 const std::vector<uint64_t> &arr2) {
-  auto start = std::chrono::steady_clock::now();
-  std::vector<uint64_t> r(COUNT);
-
-  for (uint64_t i = 0; i < COUNT; ++i)
-    r[i] = uint64_t(float(arr1[i]) * float(arr2[i]) * rand01(i));
-
-  auto end = std::chrono::steady_clock::now();
-  auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(end - start)
-                .count();
-  std::cout << "CPU took " << ms << " ms\n";
-}
-
-// GPU computation
-void gpu_compute(const std::vector<uint64_t> &arr1,
-                 const std::vector<uint64_t> &arr2) {
-  NS::AutoreleasePool *pool = NS::AutoreleasePool::alloc()->init();
-
-  auto start = std::chrono::steady_clock::now();
-
-  auto device = MTL::CreateSystemDefaultDevice();
-  auto queue = device->newCommandQueue();
-
-  NS::String *libPath =
-      NS::String::string("shader.metallib", NS::UTF8StringEncoding);
+MTL::ComputePipelineState *create_state(const std::string &path,
+                                        const std::string &func_name,
+                                        MTL::Device *device) {
+  NS::String *ns_path =
+      NS::String::string(path.c_str(), NS::UTF8StringEncoding);
   NS::Error *err;
-  MTL::Library *lib = device->newLibrary(libPath, &err);
-  NS::String *funcName =
-      NS::String::string("addition_compute_function", NS::UTF8StringEncoding);
-  auto *func = lib->newFunction(funcName);
 
-  auto *state = device->newComputePipelineState(func, &err);
+  MTL::Library *lib = device->newLibrary(ns_path, &err);
 
-  auto buf1 = device->newBuffer(arr1.data(), sizeof(uint64_t) * COUNT,
-                                MTL::ResourceStorageModeShared);
-  auto buf2 = device->newBuffer(arr2.data(), sizeof(uint64_t) * COUNT,
-                                MTL::ResourceStorageModeShared);
-  auto resultBuffer = device->newBuffer(sizeof(uint64_t) * COUNT,
-                                        MTL::ResourceStorageModeShared);
+  NS::String *ns_func_name =
+      NS::String::string(func_name.c_str(), NS::UTF8StringEncoding);
+
+  auto *func = lib->newFunction(ns_func_name);
+  return device->newComputePipelineState(func, &err);
+}
+
+int main() {
+  auto start = std::chrono::system_clock::now();
+
+  const i32 POPULATION = 100'000'000;
+  const i16 SIZE = 11;
+
+  auto *device = create_device();
+  auto *queue = create_queue(device);
+  auto *state = create_state("shader.metallib",
+                             "create_random_portfolios_batched", device);
+
+  // Allocate a single buffer to hold all portfolios
+  auto bufferSize = sizeof(float) * SIZE * POPULATION;
+  auto portfoliosBuffer =
+      device->newBuffer(bufferSize, MTL::ResourceStorageModeShared);
 
   auto *commandBuffer = queue->commandBuffer();
   auto *encoder = commandBuffer->computeCommandEncoder();
-  encoder->setComputePipelineState(state);
-  encoder->setBuffer(buf1, 0, 0);
-  encoder->setBuffer(buf2, 0, 1);
-  encoder->setBuffer(resultBuffer, 0, 2);
 
-  auto threadsPerThreadgroup =
-      MTL::Size(state->maxTotalThreadsPerThreadgroup(), 1, 1);
-  auto threadsPerGrid = MTL::Size(COUNT, 1, 1);
-  encoder->dispatchThreads(threadsPerGrid, threadsPerThreadgroup);
+  encoder->setComputePipelineState(state);
+  encoder->setBuffer(portfoliosBuffer, 0, 0);
+
+  // Launch one thread per portfolio
+  uint maxThreads = state->maxTotalThreadsPerThreadgroup();
+  auto threadsPerThreadGroup =
+      MTL::Size(std::min<size_t>(POPULATION, maxThreads), 1, 1);
+  auto threadsPerGrid = MTL::Size(POPULATION, 1, 1);
+
+  encoder->dispatchThreads(threadsPerGrid, threadsPerThreadGroup);
 
   encoder->endEncoding();
   commandBuffer->commit();
   commandBuffer->waitUntilCompleted();
 
-  auto *results = reinterpret_cast<uint64_t *>(resultBuffer->contents());
+  // Access results if needed
+  float *results = (float *)portfoliosBuffer->contents();
+  // e.g., results[i * SIZE + j] is j-th float of i-th portfolio
 
-  auto end = std::chrono::steady_clock::now();
+  portfoliosBuffer->release();
+  encoder->release();
+  commandBuffer->release();
+  state->release();
+  queue->release();
+  device->release();
+
+  auto end = std::chrono::system_clock::now();
   auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(end - start)
                 .count();
-  std::cout << "GPU took " << ms << " ms\n";
-
-  pool->release();
-}
-
-int main() {
-  auto arr1 = init_arr();
-  auto arr2 = init_arr();
-
-  gpu_compute(arr1, arr2);
-  cpu_compute(arr1, arr2);
+  std::cout << "It took " << ms << " milliseconds\n";
 
   return 0;
 }

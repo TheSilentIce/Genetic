@@ -1,5 +1,6 @@
 #ifndef GENETIC_UTIL_H
 #define GENETIC_UTIL_H
+#include "../types.h"
 #include "portfolio.h"
 #include <string>
 #include <vector>
@@ -13,5 +14,5 @@ void mutate(std::vector<float> &child);
 void normalize(std::vector<float> &child);
 
 Portfolio create_child(std::vector<float> &child);
-Portfolio create_random_portfolio(const std::vector<std::string> &keys);
+Portfolio create_random_portfolio(const i16 size);
 #endif

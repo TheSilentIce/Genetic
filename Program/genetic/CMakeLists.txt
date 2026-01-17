@@ -1,5 +1,3 @@
-include(FetchContent)
-
 add_library(gen 
 	genetic_util.cpp
 	genetic_util.h
@@ -9,6 +7,4 @@ add_library(gen
 	world.h
 )
 
-
-target_link_libraries(gen PRIVATE metal)
-target_link_libraries(algo gen metal)
+target_link_libraries(algo gen)

@@ -1,9 +1,4 @@
-#define NS_PRIVATE_IMPLEMENTATION
-#define CA_PRIVATE_IMPLEMENTATION
-#define MTL_PRIVATE_IMPLEMENTATION
 #include "genetic_util.h"
-#include "../types.h"
-#include <Metal/Metal.hpp>
 #include <cmath>
 #include <cstdlib>
 #include <ctime>
@@ -154,11 +149,11 @@ void mutate(std::vector<float> child) {
 
 Portfolio create_child(std::vector<float> child) { return Portfolio(child); }
 
-Portfolio create_random_portfolio(const std::vector<std::string> &keys) {
+Portfolio create_random_portfolio(const i16 size) {
   std::vector<float> props{};
-  props.reserve(keys.size());
+  props.reserve(size);
 
-  for (i16 i = 0; i < keys.size(); ++i) {
+  for (i16 i = 0; i < size; ++i) {
     float prop = random_float();
     props.push_back(prop);
   }

@@ -8,7 +8,7 @@
 #include <vector>
 
 // constexpr short GENERATIONS{1000};
-constexpr i32 POPULATION{1'000'000};
+constexpr i32 POPULATION{100'000};
 // constexpr int16_t CHILDREN{500};
 // constexpr float TOP_PERCENTAGE{0.1};
 // constexpr int16_t TOP{CHILDREN * (short)TOP_PERCENTAGE};
@@ -18,8 +18,9 @@ std::vector<Portfolio *> mating_pool;
 
 void initialize_population(const std::vector<std::string> &keys) {
   population.reserve(POPULATION);
+  const i16 size = keys.size();
   for (i32 i{0}; i < POPULATION; ++i) {
-    population.push_back(create_random_portfolio(keys));
+    population.push_back(create_random_portfolio(size));
   }
 }
 
