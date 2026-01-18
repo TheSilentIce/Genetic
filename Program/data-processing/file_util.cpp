@@ -8,6 +8,7 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include <filesystem>
 
 constexpr i16 NUM_TICKETS = 500;
 

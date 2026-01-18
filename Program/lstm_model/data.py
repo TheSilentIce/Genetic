@@ -35,10 +35,11 @@ for ticker in tickers:
 
     rows.append([ticker])
 
-    rows.append(["Date"] + list(sub.columns))
-
+    rows.append(["Date", "days"] + list(sub.columns))
+    start_date = sub.index[0]
     for date, r in sub.iterrows():
-        rows.append([date.strftime("%Y-%m-%d")] + r.values.tolist())
+        days_elapsed = (date - start_date).days
+        rows.append([date.strftime("%Y-%m-%d"), days_elapsed] + r.values.tolist())
 
     rows.append([])
 
