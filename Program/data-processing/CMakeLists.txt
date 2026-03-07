@@ -5,4 +5,4 @@ add_library(data-pro
 	file_util.h
 )
 
-target_link_libraries(runner data-pro)
+target_link_libraries(get-data data-pro)

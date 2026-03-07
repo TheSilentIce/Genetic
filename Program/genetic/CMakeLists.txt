@@ -7,4 +7,4 @@ add_library(gen
 	world.h
 )
 
-target_link_libraries(algo gen)
+target_link_libraries(run-algorithm gen)

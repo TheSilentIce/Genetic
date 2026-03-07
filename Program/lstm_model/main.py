@@ -1,4 +1,5 @@
 import time
+from datetime import datetime
 
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -8,7 +9,6 @@ from torch import nn
 from torch.utils.data import Dataset
 
 start_time = time.time()
-
 
 df = pd.read_csv("../data/new_data.csv")
 gpu = torch.device("cpu")
@@ -30,15 +30,13 @@ class StockDataSet(Dataset):
         self.ticker = ticker_data["Ticket"].iloc[0]
         self.seq_length = seq_length
 
-        # Split data by time (chronological split)
         split_idx = int(len(ticker_data) * split_ratio)
 
         if train:
-            data = ticker_data.iloc[:split_idx]  # First 80% for training
+            data = ticker_data.iloc[:split_idx]
         else:
-            data = ticker_data.iloc[split_idx:]  # Last 20% for testing
+            data = ticker_data.iloc[split_idx:]
 
-        # Normalize data
         feature_cols = [
             "Open",
             "High",
@@ -49,39 +47,30 @@ class StockDataSet(Dataset):
             "EMA",
             "%K",
             "%D",
-        ]  # Missing close - Now I know why
-        # Basically features are X / Input to ML model
-        # Output is predicted close price
+        ]
 
         X_data = data[feature_cols].values
         y_data = data["Close"].values.reshape(-1, 1)
 
         if train:
-            # FIT scaler on training data only
-            self.scaler_X = (
-                MinMaxScaler()
-            )  # scales to 0-1 range by subtracting the min from each value and dividing by range of X values.
+            self.scaler_X = MinMaxScaler()
             self.scaler_y = MinMaxScaler()
             X_scaled = self.scaler_X.fit_transform(X_data)
             y_scaled = self.scaler_y.fit_transform(y_data)
         else:
-            # USE the training scaler (don't fit on test data)
             if scaler_X is None or scaler_y is None:
                 raise ValueError("Must provide scalers for test set")
             self.scaler_X = scaler_X
             self.scaler_y = scaler_y
-            X_scaled = self.scaler_X.transform(X_data)  # transform only
-            y_scaled = self.scaler_y.transform(y_data)  # transform only
+            X_scaled = self.scaler_X.transform(X_data)
+            y_scaled = self.scaler_y.transform(y_data)
 
-        # Create sequences
         self.X = []
         self.y = []
         for i in range(len(X_scaled) - seq_length):
             self.X.append(X_scaled[i : i + seq_length])
             self.y.append(y_scaled[i + seq_length])
 
-        # self.X = torch.FloatTensor(self.X)
-        # self.y = torch.FloatTensor(self.y)
         self.X = torch.tensor(self.X, dtype=torch.float32, device=gpu)
         self.y = torch.tensor(self.y, dtype=torch.float32, device=gpu)
 
@@ -111,11 +100,8 @@ train_datasets = {}
 test_datasets = {}
 
 for ticker, group in df.groupby("Ticket"):
-    if len(group) > 30:  # Need enough data for sequences
-        # Create training dataset (fits scaler)
+    if len(group) > 30:
         train_ds = StockDataSet(group, seq_length=30, train=True, split_ratio=0.8)
-
-        # Create test dataset (uses training scaler)
         test_ds = StockDataSet(
             group,
             seq_length=30,
@@ -124,7 +110,6 @@ for ticker, group in df.groupby("Ticket"):
             scaler_X=train_ds.scaler_X,
             scaler_y=train_ds.scaler_y,
         )
-
         train_datasets[ticker] = train_ds
         test_datasets[ticker] = test_ds
 
@@ -132,14 +117,14 @@ print(f"Training on {len(train_datasets)} stocks")
 
 # Model setup
 input_dim = 9
-model = LSTMModel(input_dim=input_dim, hidden_dim=50, layer_dim=2, output_dim=1)
+model = LSTMModel(input_dim=input_dim, hidden_dim=256, layer_dim=2, output_dim=1)
 model = model.to(gpu)
 criterion = nn.MSELoss()
 optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 
-num_epochs = 100
+num_epochs = 120
 
-# Training (ONLY on training data)
+# Training
 print("\n=== Training ===")
 for epoch in range(num_epochs):
     model.train()
@@ -161,34 +146,7 @@ for epoch in range(num_epochs):
         avg_loss = epoch_loss / len(train_datasets)
         print(f"Epoch [{epoch+1}/{num_epochs}], Avg Loss: {avg_loss:.4f}")
 
-# ============== SAVE MODEL ==============
-# Save the complete model checkpoint
-checkpoint = {
-    "model_state_dict": model.state_dict(),
-    "optimizer_state_dict": optimizer.state_dict(),
-    "input_dim": input_dim,
-    "hidden_dim": 50,
-    "layer_dim": 2,
-    "output_dim": 1,
-    "num_epochs": num_epochs,
-    "scalers": {
-        ticker: {
-            "scaler_X": train_datasets[ticker].scaler_X,
-            "scaler_y": train_datasets[ticker].scaler_y,
-        }
-        for ticker in train_datasets.keys()
-    },
-}
-
-torch.save(checkpoint, "stock_lstm_model.pth")
-print("\n✅ Model saved as 'stock_lstm_model.pth'")
-
-# Also save just the model weights (lighter file)
-torch.save(model.state_dict(), "stock_lstm_weights.pth")
-print("✅ Model weights saved as 'stock_lstm_weights.pth'")
-# ========================================
-
-# Evaluation on TEST data (data model has NEVER seen)
+# Evaluation on TEST data
 print("\n=== Testing on Unseen Data ===")
 model.eval()
 with torch.no_grad():
@@ -203,7 +161,6 @@ with torch.no_grad():
     for idx, (ticker, dataset) in enumerate(test_datasets.items()):
         predictions = model(dataset.X)
 
-        # Inverse transform to get actual prices
         pred_prices = dataset.scaler_y.inverse_transform(predictions.cpu().numpy())
         actual_prices = dataset.scaler_y.inverse_transform(dataset.y.cpu().numpy())
 
@@ -218,7 +175,6 @@ with torch.no_grad():
                 f"  [{i}] Pred: ${pred_val:.2f}, Actual: ${actual_val:.2f}, Error: ${error:.2f} ({error_pct:.2f}%)"
             )
 
-        # Calculate average error for this stock
         all_errors = abs(pred_prices - actual_prices)
         avg_error = all_errors.mean()
         avg_error_pct = (all_errors / actual_prices * 100).mean()
@@ -226,7 +182,6 @@ with torch.no_grad():
 
         overall_errors.append(avg_error_pct)
 
-        # Plot
         ax = axes[idx]
         ax.plot(actual_prices, label="Actual", linewidth=2)
         ax.plot(pred_prices, label="Predicted", linewidth=2, alpha=0.7)
@@ -236,7 +191,6 @@ with torch.no_grad():
         ax.legend()
         ax.grid(True, alpha=0.3)
 
-    # Overall statistics
     end_time = time.time()
     elapse = end_time - start_time
     print(f"Elapsed time: {elapse:.6f} seconds")
@@ -257,3 +211,36 @@ with torch.no_grad():
     plt.savefig("test_predictions.png", dpi=300, bbox_inches="tight")
     print("\n✅ Plot saved as 'test_predictions.png'")
     plt.show()
+
+
+# ── Save predictions to txt ───────────────────────────────────────────────────
+has_date_col = "Date" in df.columns
+if has_date_col:
+    df["Date"] = pd.to_datetime(df["Date"])
+
+with open("../data/predictions.txt", "w") as f:
+    for ticker in sorted(test_datasets.keys()):
+        dataset = test_datasets[ticker]
+
+        with torch.no_grad():
+            predictions = model(dataset.X)
+
+        pred_prices = dataset.scaler_y.inverse_transform(predictions.cpu().numpy())
+
+        group = df[df["Ticket"] == ticker]
+        group = group.sort_values("Date") if has_date_col else group
+        split_idx = int(len(group) * 0.8)
+        test_group = group.iloc[split_idx:].reset_index(drop=True)
+
+        f.write(f"{ticker}\n")
+
+        for i in range(len(pred_prices)):
+            date_val = (
+                str(test_group["Date"].iloc[i + dataset.seq_length])[:10]
+                if has_date_col and (i + dataset.seq_length) < len(test_group)
+                else f"step_{i:04d}"
+            )
+            price = pred_prices[i][0]
+            f.write(f"{date_val}, {price:.2f}\n")
+
+        f.write("\n")

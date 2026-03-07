@@ -11,5 +11,5 @@ add_custom_command(
 )
 
 add_custom_target(idk ALL DEPENDS ${METAL_LIB})
-add_dependencies(speed idk)
-target_link_libraries(speed metal)
+add_dependencies(gpu-accelerated idk)
+target_link_libraries(gpu-accelerated metal)

@@ -12,8 +12,8 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 add_compile_definitions(PROJECT_ROOT="${CMAKE_SOURCE_DIR}")
 
-add_executable(algo Program/genetic/main.cpp)
-add_executable(runner Program/data-processing/runner.cpp)
+add_executable(run-algorithm Program/genetic/main.cpp)
+add_executable(get-data Program/data-processing/runner.cpp)
 
 add_subdirectory(Program/data-processing)
 add_subdirectory(Program/genetic)
@@ -36,12 +36,12 @@ if(APPLE)
         "-framework QuartzCore"
     )
 
-    add_executable(speed Program/genetic/gpu-accelerated/gpu_util.cpp)
+    add_executable(gpu-accelerated Program/genetic/gpu-accelerated/gpu_util.cpp)
     add_subdirectory(Program/genetic/gpu-accelerated)
 
-    add_custom_command(TARGET speed POST_BUILD
+    add_custom_command(TARGET gpu-accelerated POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
         ${CMAKE_BINARY_DIR}/Program/genetic/gpu-accelerated/shader.metallib
-        $<TARGET_FILE_DIR:speed>/shader.metallib
+        $<TARGET_FILE_DIR:gpu-accelerated>/shader.metallib
     )
 endif()
