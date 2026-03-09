@@ -12,6 +12,20 @@ constexpr float SMOOTHING_FACTOR = 2.0;
 constexpr float SMOOTHING_OVER_PERIOD =
     SMOOTHING_FACTOR / (MOVING_AVERAGE_PERIOD + 1);
 
+std::vector<float>
+prices_to_percentage(const std::vector<std::string> &stock_data, i8 key) {
+  std::vector<float> vec{};
+  vec.reserve(stock_data.size() - 14);
+
+  for (i16 i = 14; i < stock_data.size(); ++i) {
+    float prev = split_line(stock_data.at(i - 1)).at(key);
+    float curr = split_line(stock_data.at(i)).at(key);
+    float percentage = (curr - prev) / prev;
+    vec.push_back(percentage);
+  }
+  return vec;
+}
+
 /**
  * This method creates a vector of Relative Strength Indices(RSI) for each day
  * We initialize the RSI as RSI is standardized as being a 2 week period
@@ -212,4 +226,33 @@ float calculate_SO_D(const std::vector<float> &k_data, i16 start) {
   sum += k_data.at(start - 2);
 
   return sum /= 3;
+}
+
+std::vector<int>
+init_on_balance_volumes(const std::vector<std::string> &stock_data) {
+
+  std::vector<int> obv_vec{};
+
+  int obv = split_line(stock_data.at(8)).at(VOLUME);
+
+  for (i16 i{9}; i < stock_data.size(); ++i) {
+    float prev_price = split_line(stock_data.at(i - 1)).at(CLOSE);
+    float curr_price = split_line(stock_data.at(i)).at(CLOSE);
+    int volume = split_line(stock_data.at(i)).at(VOLUME);
+    obv = calculate_on_balance_volume(curr_price, prev_price, obv, volume);
+    obv_vec.push_back(obv);
+  }
+
+  return obv_vec;
+}
+
+int calculate_on_balance_volume(float curr_price, float prev_price, int obv,
+                                int volume) {
+  if (curr_price > prev_price)
+    return obv + volume;
+
+  if (curr_price < prev_price)
+    return obv - volume;
+
+  return obv;
 }
