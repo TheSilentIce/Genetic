@@ -42,6 +42,7 @@ class StockDataSet(Dataset):
             "High",
             "Low",
             "Volume",
+            "OBV",
             "RSI",
             "SMA",
             "EMA",
@@ -116,7 +117,7 @@ for ticker, group in df.groupby("Ticket"):
 print(f"Training on {len(train_datasets)} stocks")
 
 # Model setup
-input_dim = 9
+input_dim = 10
 model = LSTMModel(input_dim=input_dim, hidden_dim=256, layer_dim=2, output_dim=1)
 model = model.to(gpu)
 criterion = nn.MSELoss()
@@ -146,8 +147,8 @@ for epoch in range(num_epochs):
         avg_loss = epoch_loss / len(train_datasets)
         print(f"Epoch [{epoch+1}/{num_epochs}], Avg Loss: {avg_loss:.4f}")
 
-# Evaluation on TEST data
-print("\n=== Testing on Unseen Data ===")
+# === Testing on Unseen Data (returns) ===
+print("\n=== Testing on Unseen Data (returns) ===")
 model.eval()
 with torch.no_grad():
     num_stocks = len(test_datasets)
@@ -159,26 +160,46 @@ with torch.no_grad():
     overall_errors = []
 
     for idx, (ticker, dataset) in enumerate(test_datasets.items()):
-        predictions = model(dataset.X)
+        # Predict returns
+        pred_returns = model(dataset.X)
+        actual_returns = dataset.y
 
-        pred_prices = dataset.scaler_y.inverse_transform(predictions.cpu().numpy())
-        actual_prices = dataset.scaler_y.inverse_transform(dataset.y.cpu().numpy())
+        # Recover original prices from returns
+        group = df[df["Ticket"] == ticker].copy()
+        if "Date" in group.columns:
+            group["Date"] = pd.to_datetime(group["Date"])
+            group = group.sort_values("Date").reset_index(drop=True)
+        else:
+            group = group.reset_index(drop=True)
+
+        # Align last_close with number of predictions
+        last_close = group["Open"].values[
+            dataset.seq_length : dataset.seq_length + len(dataset.y)
+        ]
+
+        pred_prices = last_close * (1 + pred_returns.cpu().numpy().flatten())
+        actual_prices = last_close * (1 + actual_returns.cpu().numpy().flatten())
+
+        # Baseline: predict next price = today's open
+        baseline_prices = last_close
+        baseline_error_pct = (
+            abs(baseline_prices - actual_prices) / actual_prices * 100
+        ).mean()
 
         print(f"\n{ticker}:")
-        print(f"  Test set size: {len(predictions)} predictions")
-        for i in range(min(10, len(predictions))):
-            pred_val = pred_prices[i][0]
-            actual_val = actual_prices[i][0]
-            error = abs(pred_val - actual_val)
-            error_pct = (error / actual_val) * 100
+        print(f"  Test set size: {len(pred_prices)} predictions")
+        for i in range(min(10, len(pred_prices))):
+            error = abs(pred_prices[i] - actual_prices[i])
+            error_pct = (error / actual_prices[i]) * 100
             print(
-                f"  [{i}] Pred: ${pred_val:.2f}, Actual: ${actual_val:.2f}, Error: ${error:.2f} ({error_pct:.2f}%)"
+                f"  [{i}] Pred: ${pred_prices[i]:.2f}, Actual: ${actual_prices[i]:.2f}, Error: ${error:.2f} ({error_pct:.2f}%)"
             )
 
         all_errors = abs(pred_prices - actual_prices)
         avg_error = all_errors.mean()
         avg_error_pct = (all_errors / actual_prices * 100).mean()
         print(f"  Average Error: ${avg_error:.2f} ({avg_error_pct:.2f}%)")
+        print(f"  Baseline Error (predict last open): {baseline_error_pct:.2f}%")
 
         overall_errors.append(avg_error_pct)
 
@@ -191,10 +212,6 @@ with torch.no_grad():
         ax.legend()
         ax.grid(True, alpha=0.3)
 
-    end_time = time.time()
-    elapse = end_time - start_time
-    print(f"Elapsed time: {elapse:.6f} seconds")
-
     print(f"\n{'='*50}")
     print(f"OVERALL TEST PERFORMANCE")
     print(
@@ -202,16 +219,12 @@ with torch.no_grad():
     )
     print(f"Best Stock: {min(overall_errors):.2f}%")
     print(f"Worst Stock: {max(overall_errors):.2f}%")
-    print(
-        f"Number of test predictions per stock: ~{len(test_datasets[list(test_datasets.keys())[0]].X)}"
-    )
     print(f"{'='*50}")
 
     plt.tight_layout()
-    plt.savefig("test_predictions.png", dpi=300, bbox_inches="tight")
-    print("\n✅ Plot saved as 'test_predictions.png'")
+    plt.savefig("test_predictions_returns.png", dpi=300, bbox_inches="tight")
+    print("\n✅ Plot saved as 'test_predictions_returns.png'")
     plt.show()
-
 
 # ── Save predictions to txt ───────────────────────────────────────────────────
 has_date_col = "Date" in df.columns

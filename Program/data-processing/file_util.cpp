@@ -38,10 +38,10 @@ void create_csv(std::vector<std::vector<std::string>> &data) {
   for (i16 i = 0; i < data.size(); ++i) {
     const std::vector<std::string> vec = data.at(i);
 
-    std::vector<float> open_percentage = prices_to_percentage(vec, OPEN);
+    // std::vector<float> open_percentage = prices_to_percentage(vec, OPEN);
     std::vector<float> close_percentage = prices_to_percentage(vec, CLOSE);
-    std::vector<float> high_percentage = prices_to_percentage(vec, HIGH);
-    std::vector<float> low_percentage = prices_to_percentage(vec, LOW);
+    // std::vector<float> high_percentage = prices_to_percentage(vec, HIGH);
+    // std::vector<float> low_percentage = prices_to_percentage(vec, LOW);
     std::vector<int> obv = init_on_balance_volumes(vec);
 
     std::vector<float> rsi = initialize_RSI(vec);
@@ -55,10 +55,15 @@ void create_csv(std::vector<std::vector<std::string>> &data) {
       std::string new_line;
 
       new_line += names.at(i) + ',';
-      new_line += std::to_string(open_percentage.at(j - 14)) + ',';
+      // new_line += std::to_string(open_percentage.at(j - 14)) + ',';
+      // new_line += std::to_string(close_percentage.at(j - 14)) + ',';
+      // new_line += std::to_string(high_percentage.at(j - 14)) + ',';
+      // new_line += std::to_string(low_percentage.at(j - 14)) + ',';
+      new_line += std::to_string(line.at(OPEN)) + ',';
       new_line += std::to_string(close_percentage.at(j - 14)) + ',';
-      new_line += std::to_string(high_percentage.at(j - 14)) + ',';
-      new_line += std::to_string(low_percentage.at(j - 14)) + ',';
+      // new_line += std::to_string(line.at(CLOSE)) + ',';
+      new_line += std::to_string(line.at(HIGH)) + ',';
+      new_line += std::to_string(line.at(LOW)) + ',';
       new_line += std::to_string(line.at(VOLUME)) + ',';
       new_line += std::to_string(obv.at(j - 14)) + ',';
       new_line += std::to_string(rsi.at(j - 14)) + ',';
