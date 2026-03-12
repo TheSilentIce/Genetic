@@ -1,7 +1,7 @@
 import time
-from datetime import datetime
 
 import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
 import torch
 from sklearn.preprocessing import MinMaxScaler
@@ -10,32 +10,25 @@ from torch.utils.data import Dataset
 
 start_time = time.time()
 
-df = pd.read_csv("../data/new_data.csv")
-gpu = torch.device("cpu")
+# ── Load CSVs (flat format with Ticket column) ────────────────────────────────
+train_df = pd.read_csv("../data/new_training.csv")
+test_df = pd.read_csv("../data/new_testing.csv")
 
+print(f"Train rows: {len(train_df)} | Test rows: {len(test_df)}")
+print(f"Tickers: {sorted(train_df['Ticket'].unique())}")
+
+gpu = torch.device("cpu")
 if torch.backends.mps.is_available():
     gpu = torch.device("mps")
 
 
+# ── Dataset ───────────────────────────────────────────────────────────────────
 class StockDataSet(Dataset):
     def __init__(
-        self,
-        ticker_data,
-        seq_length=30,
-        train=True,
-        split_ratio=0.8,
-        scaler_X=None,
-        scaler_y=None,
+        self, ticker_data, seq_length=30, scaler_X=None, scaler_y=None, fit_scalers=True
     ):
         self.ticker = ticker_data["Ticket"].iloc[0]
         self.seq_length = seq_length
-
-        split_idx = int(len(ticker_data) * split_ratio)
-
-        if train:
-            data = ticker_data.iloc[:split_idx]
-        else:
-            data = ticker_data.iloc[split_idx:]
 
         feature_cols = [
             "Open",
@@ -50,10 +43,10 @@ class StockDataSet(Dataset):
             "%D",
         ]
 
-        X_data = data[feature_cols].values
-        y_data = data["Close"].values.reshape(-1, 1)
+        X_data = ticker_data[feature_cols].values
+        y_data = ticker_data["Close"].values.reshape(-1, 1)
 
-        if train:
+        if fit_scalers:
             self.scaler_X = MinMaxScaler()
             self.scaler_y = MinMaxScaler()
             X_scaled = self.scaler_X.fit_transform(X_data)
@@ -82,6 +75,32 @@ class StockDataSet(Dataset):
         return self.X[idx], self.y[idx]
 
 
+# ── Build datasets ────────────────────────────────────────────────────────────
+train_datasets = {}
+test_datasets = {}
+
+common_tickers = set(train_df["Ticket"].unique()) & set(test_df["Ticket"].unique())
+
+for ticker in common_tickers:
+    train_group = train_df[train_df["Ticket"] == ticker].reset_index(drop=True)
+    test_group = test_df[test_df["Ticket"] == ticker].reset_index(drop=True)
+
+    if len(train_group) > 30 and len(test_group) > 30:
+        train_ds = StockDataSet(train_group, seq_length=30, fit_scalers=True)
+        test_ds = StockDataSet(
+            test_group,
+            seq_length=30,
+            scaler_X=train_ds.scaler_X,
+            scaler_y=train_ds.scaler_y,
+            fit_scalers=False,
+        )
+        train_datasets[ticker] = train_ds
+        test_datasets[ticker] = test_ds
+
+print(f"Training on {len(train_datasets)} stocks")
+
+
+# ── Model ─────────────────────────────────────────────────────────────────────
 class LSTMModel(nn.Module):
     def __init__(self, input_dim, hidden_dim, layer_dim, output_dim):
         super(LSTMModel, self).__init__()
@@ -96,164 +115,154 @@ class LSTMModel(nn.Module):
         return out
 
 
-# Create train and test datasets with proper scaler sharing
-train_datasets = {}
-test_datasets = {}
-
-for ticker, group in df.groupby("Ticket"):
-    if len(group) > 30:
-        train_ds = StockDataSet(group, seq_length=30, train=True, split_ratio=0.8)
-        test_ds = StockDataSet(
-            group,
-            seq_length=30,
-            train=False,
-            split_ratio=0.8,
-            scaler_X=train_ds.scaler_X,
-            scaler_y=train_ds.scaler_y,
-        )
-        train_datasets[ticker] = train_ds
-        test_datasets[ticker] = test_ds
-
-print(f"Training on {len(train_datasets)} stocks")
-
-# Model setup
-input_dim = 10
-model = LSTMModel(input_dim=input_dim, hidden_dim=256, layer_dim=2, output_dim=1)
-model = model.to(gpu)
+model = LSTMModel(input_dim=10, hidden_dim=256, layer_dim=2, output_dim=1).to(gpu)
 criterion = nn.MSELoss()
 optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
-
 num_epochs = 120
 
-# Training
+# ── Training ──────────────────────────────────────────────────────────────────
 print("\n=== Training ===")
 for epoch in range(num_epochs):
     model.train()
     epoch_loss = 0.0
 
     for ticker, dataset in train_datasets.items():
-        trainX = dataset.X
-        trainY = dataset.y
-
         optimizer.zero_grad()
-        outputs = model(trainX)
-        loss = criterion(outputs, trainY)
+        outputs = model(dataset.X)
+        loss = criterion(outputs, dataset.y)
         loss.backward()
         optimizer.step()
-
         epoch_loss += loss.item()
 
     if (epoch + 1) % 10 == 0:
         avg_loss = epoch_loss / len(train_datasets)
         print(f"Epoch [{epoch+1}/{num_epochs}], Avg Loss: {avg_loss:.4f}")
 
-# === Testing on Unseen Data (returns) ===
-print("\n=== Testing on Unseen Data (returns) ===")
+
+# ── Helpers ───────────────────────────────────────────────────────────────────
+def directional_accuracy(pred: np.ndarray, actual: np.ndarray) -> float:
+    """% of predictions where up/down direction matches actual."""
+    pred_dir = np.sign(pred)
+    actual_dir = np.sign(actual)
+    return (pred_dir == actual_dir).mean() * 100
+
+
+def magnitude_accuracy(
+    pred: np.ndarray, actual: np.ndarray, tolerance: float = 0.005
+) -> float:
+    """% of predictions within ±tolerance of actual (default 0.5 pp)."""
+    return (np.abs(pred - actual) <= tolerance).mean() * 100
+
+
+# ── Testing ───────────────────────────────────────────────────────────────────
+print("\n=== Testing on Unseen Data (% change predictions) ===")
 model.eval()
+
 with torch.no_grad():
     num_stocks = len(test_datasets)
     fig, axes = plt.subplots(num_stocks, 1, figsize=(12, 5 * num_stocks))
-
     if num_stocks == 1:
         axes = [axes]
 
-    overall_errors = []
+    overall_mae = []
+    overall_dir_acc = []
+    overall_mag_acc = []
 
     for idx, (ticker, dataset) in enumerate(test_datasets.items()):
-        # Predict returns
-        pred_returns = model(dataset.X)
-        actual_returns = dataset.y
+        pred_scaled = model(dataset.X)
+        # Inverse-transform back to raw % change values
+        pred_pct = dataset.scaler_y.inverse_transform(
+            pred_scaled.cpu().numpy()
+        ).flatten()
+        actual_pct = dataset.scaler_y.inverse_transform(
+            dataset.y.cpu().numpy()
+        ).flatten()
 
-        # Recover original prices from returns
-        group = df[df["Ticket"] == ticker].copy()
-        if "Date" in group.columns:
-            group["Date"] = pd.to_datetime(group["Date"])
-            group = group.sort_values("Date").reset_index(drop=True)
-        else:
-            group = group.reset_index(drop=True)
+        # ── Per-prediction stats ──────────────────────────────────────────────
+        abs_errors = np.abs(pred_pct - actual_pct)
+        mae = abs_errors.mean()  # mean abs error in pct-change units
+        mae_pp = mae * 100  # convert to percentage points
 
-        # Align last_close with number of predictions
-        last_close = group["Open"].values[
-            dataset.seq_length : dataset.seq_length + len(dataset.y)
-        ]
+        dir_acc = directional_accuracy(pred_pct, actual_pct)  # up/down accuracy %
+        mag_acc = magnitude_accuracy(
+            pred_pct, actual_pct, tolerance=0.005
+        )  # within 0.5pp
 
-        pred_prices = last_close * (1 + pred_returns.cpu().numpy().flatten())
-        actual_prices = last_close * (1 + actual_returns.cpu().numpy().flatten())
-
-        # Baseline: predict next price = today's open
-        baseline_prices = last_close
-        baseline_error_pct = (
-            abs(baseline_prices - actual_prices) / actual_prices * 100
-        ).mean()
+        overall_mae.append(mae_pp)
+        overall_dir_acc.append(dir_acc)
+        overall_mag_acc.append(mag_acc)
 
         print(f"\n{ticker}:")
-        print(f"  Test set size: {len(pred_prices)} predictions")
-        for i in range(min(10, len(pred_prices))):
-            error = abs(pred_prices[i] - actual_prices[i])
-            error_pct = (error / actual_prices[i]) * 100
+        print(f"  Test set size: {len(pred_pct)} predictions")
+        print(f"  {'Sample':>6}  {'Pred':>9}  {'Actual':>9}  {'Error':>9}  {'Dir':>5}")
+        print(f"  {'-'*46}")
+        for i in range(min(10, len(pred_pct))):
+            p, a = pred_pct[i], actual_pct[i]
+            err = abs(p - a)
+            match = "✓" if np.sign(p) == np.sign(a) else "✗"
             print(
-                f"  [{i}] Pred: ${pred_prices[i]:.2f}, Actual: ${actual_prices[i]:.2f}, Error: ${error:.2f} ({error_pct:.2f}%)"
+                f"  [{i:>4}]  {p*100:>+8.3f}%  {a*100:>+8.3f}%  {err*100:>8.3f}pp  {match:>5}"
             )
 
-        all_errors = abs(pred_prices - actual_prices)
-        avg_error = all_errors.mean()
-        avg_error_pct = (all_errors / actual_prices * 100).mean()
-        print(f"  Average Error: ${avg_error:.2f} ({avg_error_pct:.2f}%)")
-        print(f"  Baseline Error (predict last open): {baseline_error_pct:.2f}%")
-
-        overall_errors.append(avg_error_pct)
+        print(f"\n  Mean Abs Error    : {mae_pp:.4f} percentage points")
+        print(f"  Directional Acc   : {dir_acc:.1f}%  (up/down correct)")
+        print(f"  Magnitude Acc     : {mag_acc:.1f}%  (within ±0.5pp of actual)")
 
         ax = axes[idx]
-        ax.plot(actual_prices, label="Actual", linewidth=2)
-        ax.plot(pred_prices, label="Predicted", linewidth=2, alpha=0.7)
-        ax.set_title(f"{ticker} - Test Error: {avg_error_pct:.2f}%")
+        ax.plot(actual_pct * 100, label="Actual % Change", linewidth=2)
+        ax.plot(pred_pct * 100, label="Predicted % Change", linewidth=2, alpha=0.7)
+        ax.axhline(0, color="black", linewidth=0.8, linestyle="--")
+        ax.set_title(
+            f"{ticker} — Dir Acc: {dir_acc:.1f}%  |  MAE: {mae_pp:.4f}pp  |  Mag Acc: {mag_acc:.1f}%"
+        )
         ax.set_xlabel("Time Step")
-        ax.set_ylabel("Close Price ($)")
+        ax.set_ylabel("% Change")
         ax.legend()
         ax.grid(True, alpha=0.3)
 
-    print(f"\n{'='*50}")
-    print(f"OVERALL TEST PERFORMANCE")
-    print(
-        f"Average Error Across All Stocks: {sum(overall_errors)/len(overall_errors):.2f}%"
-    )
-    print(f"Best Stock: {min(overall_errors):.2f}%")
-    print(f"Worst Stock: {max(overall_errors):.2f}%")
-    print(f"{'='*50}")
+    print(f"\n{'='*55}")
+    print("OVERALL TEST PERFORMANCE")
+    print(f"  Mean Abs Error    : {np.mean(overall_mae):.4f} percentage points")
+    print(f"  Directional Acc   : {np.mean(overall_dir_acc):.1f}%")
+    print(f"  Magnitude Acc     : {np.mean(overall_mag_acc):.1f}%  (within ±0.5pp)")
+    print(f"  Best Dir Acc      : {max(overall_dir_acc):.1f}%")
+    print(f"  Worst Dir Acc     : {min(overall_dir_acc):.1f}%")
+    print(f"{'='*55}")
 
     plt.tight_layout()
-    plt.savefig("test_predictions_returns.png", dpi=300, bbox_inches="tight")
-    print("\n✅ Plot saved as 'test_predictions_returns.png'")
+    plt.savefig("test_predictions_pct.png", dpi=300, bbox_inches="tight")
+    print("\n✅ Plot saved as 'test_predictions_pct.png'")
     plt.show()
 
+
 # ── Save predictions to txt ───────────────────────────────────────────────────
-has_date_col = "Date" in df.columns
-if has_date_col:
-    df["Date"] = pd.to_datetime(df["Date"])
+has_date_col = "Date" in test_df.columns
 
 with open("../data/predictions.txt", "w") as f:
     for ticker in sorted(test_datasets.keys()):
         dataset = test_datasets[ticker]
 
         with torch.no_grad():
-            predictions = model(dataset.X)
+            pred_scaled = model(dataset.X)
 
-        pred_prices = dataset.scaler_y.inverse_transform(predictions.cpu().numpy())
+        pred_pct = dataset.scaler_y.inverse_transform(pred_scaled.cpu().numpy())
 
-        group = df[df["Ticket"] == ticker]
-        group = group.sort_values("Date") if has_date_col else group
-        split_idx = int(len(group) * 0.8)
-        test_group = group.iloc[split_idx:].reset_index(drop=True)
+        group = test_df[test_df["Ticket"] == ticker]
+        group = (
+            group.sort_values("Date").reset_index(drop=True)
+            if has_date_col
+            else group.reset_index(drop=True)
+        )
 
         f.write(f"{ticker}\n")
-
-        for i in range(len(pred_prices)):
+        for i in range(len(pred_pct)):
             date_val = (
-                str(test_group["Date"].iloc[i + dataset.seq_length])[:10]
-                if has_date_col and (i + dataset.seq_length) < len(test_group)
+                str(group["Date"].iloc[i + dataset.seq_length])[:10]
+                if has_date_col and (i + dataset.seq_length) < len(group)
                 else f"step_{i:04d}"
             )
-            price = pred_prices[i][0]
-            f.write(f"{date_val}, {price:.2f}\n")
-
+            f.write(f"{date_val}, {pred_pct[i][0]:+.6f}\n")
         f.write("\n")
+
+print(f"\n✅ Predictions saved to '../data/predictions.txt'")
+print(f"⏱  Total time: {time.time() - start_time:.1f}s")

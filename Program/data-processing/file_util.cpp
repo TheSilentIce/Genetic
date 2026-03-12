@@ -23,9 +23,10 @@ constexpr i16 NUM_TICKETS = 500;
  * Which means, we dont have the respective data for those first 14 days
  * thus, they are skipped
  */
-void create_csv(std::vector<std::vector<std::string>> &data) {
+void create_csv(std::vector<std::vector<std::string>> &data,
+                std::string &name) {
   std::filesystem::path fp =
-      std::filesystem::path(PROJECT_ROOT) / "Program" / "data" / "new_data.csv";
+      std::filesystem::path(PROJECT_ROOT) / "Program" / "data" / name;
   std::cout << "csv" << '\n';
 
   std::ofstream file;

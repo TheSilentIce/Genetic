@@ -12,7 +12,7 @@ enum LineIndices {
   VOLUME = 4,
 };
 
-void create_csv(std::vector<std::vector<std::string>> &data);
+void create_csv(std::vector<std::vector<std::string>> &data, std::string &name);
 void cleaningData(std::vector<std::vector<std::string>> &data);
 std::vector<std::vector<std::string>> read_stocks(const std::string &filepath);
 std::vector<double> split_line(std::string line);

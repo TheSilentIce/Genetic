@@ -9,11 +9,18 @@ int main() {
   // TODO standardize filepath inputting
 
   std::filesystem::path filepath =
-      std::filesystem::path(PROJECT_ROOT) / "Program" / "data" / "data.csv";
+      std::filesystem::path(PROJECT_ROOT) / "Program" / "data" / "training.csv";
 
   auto data = read_stocks(filepath.string());
+  std::string training = "new_training.csv";
+  create_csv(data, training);
 
-  create_csv(data);
+  std::filesystem::path testpath =
+      std::filesystem::path(PROJECT_ROOT) / "Program" / "data" / "testing.csv";
+
+  auto data1 = read_stocks(testpath.string());
+  std::string testing = "new_testing.csv";
+  create_csv(data1, testing);
 
   return 0;
 }
