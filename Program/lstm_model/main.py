@@ -21,27 +21,37 @@ gpu = torch.device("cpu")
 if torch.backends.mps.is_available():
     gpu = torch.device("mps")
 
+feature_cols = [
+    "Open",
+    "High",
+    "Low",
+    "Volume",
+    "OBV",
+    "RSI",
+    "SMA",
+    "EMA",
+    "%K",
+    "%D",
+]
+
+SEQUENCE = 30
+HIDDEN_DIM = 256
+LEARNING_RATE = 0.001
+num_epochs = 120
+
 
 # ── Dataset ───────────────────────────────────────────────────────────────────
 class StockDataSet(Dataset):
     def __init__(
-        self, ticker_data, seq_length=30, scaler_X=None, scaler_y=None, fit_scalers=True
+        self,
+        ticker_data,
+        seq_length=SEQUENCE,
+        scaler_X=None,
+        scaler_y=None,
+        fit_scalers=True,
     ):
         self.ticker = ticker_data["Ticket"].iloc[0]
         self.seq_length = seq_length
-
-        feature_cols = [
-            "Open",
-            "High",
-            "Low",
-            "Volume",
-            "OBV",
-            "RSI",
-            "SMA",
-            "EMA",
-            "%K",
-            "%D",
-        ]
 
         X_data = ticker_data[feature_cols].values
         y_data = ticker_data["Close"].values.reshape(-1, 1)
@@ -85,11 +95,11 @@ for ticker in common_tickers:
     train_group = train_df[train_df["Ticket"] == ticker].reset_index(drop=True)
     test_group = test_df[test_df["Ticket"] == ticker].reset_index(drop=True)
 
-    if len(train_group) > 30 and len(test_group) > 30:
-        train_ds = StockDataSet(train_group, seq_length=30, fit_scalers=True)
+    if len(train_group) > SEQUENCE and len(test_group) > SEQUENCE:
+        train_ds = StockDataSet(train_group, seq_length=SEQUENCE, fit_scalers=True)
         test_ds = StockDataSet(
             test_group,
-            seq_length=30,
+            seq_length=SEQUENCE,
             scaler_X=train_ds.scaler_X,
             scaler_y=train_ds.scaler_y,
             fit_scalers=False,
@@ -115,10 +125,11 @@ class LSTMModel(nn.Module):
         return out
 
 
-model = LSTMModel(input_dim=10, hidden_dim=256, layer_dim=2, output_dim=1).to(gpu)
+model = LSTMModel(
+    input_dim=len(feature_cols), hidden_dim=HIDDEN_DIM, layer_dim=2, output_dim=1
+).to(gpu)
 criterion = nn.MSELoss()
-optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
-num_epochs = 120
+optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE)
 
 # ── Training ──────────────────────────────────────────────────────────────────
 print("\n=== Training ===")
@@ -230,7 +241,7 @@ with torch.no_grad():
     print(f"{'='*55}")
 
     plt.tight_layout()
-    plt.savefig("test_predictions_pct.png", dpi=300, bbox_inches="tight")
+    plt.savefig("test_predictions_pct.png", dpi=SEQUENCE, bbox_inches="tight")
     print("\n✅ Plot saved as 'test_predictions_pct.png'")
     plt.show()
 
