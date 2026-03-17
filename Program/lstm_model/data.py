@@ -102,8 +102,6 @@ tickers = [
 
 crypto = ["BTC-USD", "ETH-USD", "LINK-USD"]
 
-# ── Adjustable split ratio ──────────────────────────────────────────────────
-# Fraction of data used for TRAINING  (e.g. 0.8 = 80 % train, 20 % test)
 TRAIN_RATIO = 0.8
 # ───────────────────────────────────────────────────────────────────────────
 
@@ -111,7 +109,6 @@ df = yf.download(crypto, period="2y", group_by="ticker")
 
 
 def build_rows(tickers, df, date_slice):
-    """Return the custom CSV rows for the given date slice."""
     rows = []
     for ticker in tickers:
         if isinstance(df.columns, pd.MultiIndex):
