@@ -1,6 +1,7 @@
 #include "calculations.h"
 #include "file_util.h"
 #include <algorithm>
+#include <cstdlib>
 #include <limits>
 #include <string>
 #include <vector>
@@ -11,6 +12,7 @@ constexpr i16 MOVING_AVERAGE_PERIOD = 10;
 constexpr float SMOOTHING_FACTOR = 2.0;
 constexpr float SMOOTHING_OVER_PERIOD =
     SMOOTHING_FACTOR / (MOVING_AVERAGE_PERIOD + 1);
+constexpr i16 CCI_PERIOD = 7;
 
 std::vector<float>
 prices_to_percentage(const std::vector<std::string> &stock_data, i8 key) {
@@ -38,17 +40,18 @@ std::vector<float> initialize_RSI(const std::vector<std::string> &stock_data) {
   float avg_gain = 0;
   float avg_loss = 0;
 
-  float before = split_line(stock_data.at(2)).at(CLOSE);
+  float before = split_line(stock_data.at(0)).at(CLOSE);
   float curr{};
 
   // initialize rsi
-  for (i16 i = 0; i < INITIAL_DAYS; ++i) {
+  for (i16 i = 1; i <= INITIAL_DAYS; ++i) {
     std::vector<double> a = split_line(stock_data.at(i));
     curr = a.at(CLOSE);
+
     if (curr - before >= 0) {
       avg_gain += curr - before;
     } else {
-      before += before - curr;
+      avg_loss += before - curr;
     }
 
     before = curr;
@@ -90,8 +93,8 @@ float calculate_RSI(float &avg_gain, float &avg_loss, float curr,
  */
 std::vector<float> init_SMA(const std::vector<std::string> &stock_data) {
   std::vector<float> sma_vector{};
-  for (i16 i = 9; i < stock_data.size(); ++i) {
-    float sma = calculate_SMA(i - 9, i, stock_data);
+  for (i16 i = 14; i < stock_data.size(); ++i) {
+    float sma = calculate_SMA(i - 9, i - 1, stock_data);
     sma_vector.push_back(sma);
   }
   return sma_vector;
@@ -119,11 +122,11 @@ float calculate_SMA(i16 beg, i16 end,
  * prices, so we should give more importance to said recent prices
  */
 std::vector<float> init_EMA(const std::vector<std::string> &stock_data) {
-  float ema = calculate_SMA(0, 9, stock_data);
+  float ema = calculate_SMA(5, 14, stock_data);
   std::vector<float> ema_vector{};
   ema_vector.push_back(ema);
 
-  for (i16 i = 10; i < stock_data.size(); ++i) {
+  for (i16 i = 14; i < stock_data.size(); ++i) {
     float price = split_line(stock_data.at(i)).at(CLOSE);
     ema = calculate_EMA(ema, price);
     ema_vector.push_back(ema);
@@ -165,7 +168,7 @@ float calculate_EMA(float ema, float price) {
 std::vector<float> init_SO_K(const std::vector<std::string> &stock_data) {
   std::vector<float> so_vector{};
 
-  for (i16 i = 13; i < stock_data.size(); ++i) {
+  for (i16 i = 14; i < stock_data.size(); ++i) {
     float so = calculate_SO_K(stock_data, i - 13);
     so_vector.push_back(so);
   }
@@ -230,12 +233,11 @@ float calculate_SO_D(const std::vector<float> &k_data, i16 start) {
 
 std::vector<int>
 init_on_balance_volumes(const std::vector<std::string> &stock_data) {
-
   std::vector<int> obv_vec{};
 
-  int obv = split_line(stock_data.at(8)).at(VOLUME);
+  int obv = split_line(stock_data.at(13)).at(VOLUME);
 
-  for (i16 i{9}; i < stock_data.size(); ++i) {
+  for (i16 i{14}; i < stock_data.size(); ++i) {
     float prev_price = split_line(stock_data.at(i - 1)).at(CLOSE);
     float curr_price = split_line(stock_data.at(i)).at(CLOSE);
     int volume = split_line(stock_data.at(i)).at(VOLUME);
@@ -246,8 +248,8 @@ init_on_balance_volumes(const std::vector<std::string> &stock_data) {
   return obv_vec;
 }
 
-int calculate_on_balance_volume(float curr_price, float prev_price, int obv,
-                                int volume) {
+int calculate_on_balance_volume(float curr_price, float prev_price, i16 obv,
+                                i16 volume) {
   if (curr_price > prev_price)
     return obv + volume;
 
@@ -255,4 +257,62 @@ int calculate_on_balance_volume(float curr_price, float prev_price, int obv,
     return obv - volume;
 
   return obv;
+}
+
+float calculate_typical_price(const std::vector<std::string> &stock_data,
+                              i16 beginning) {
+  float average_high{};
+  float average_low{};
+  float average_close{};
+
+  for (i16 i{beginning}; i < beginning + CCI_PERIOD; ++i) {
+    average_high += split_line(stock_data.at(i)).at(HIGH);
+    average_low += split_line(stock_data.at(i)).at(LOW);
+    average_close += split_line(stock_data.at(i)).at(CLOSE);
+  }
+
+  return (average_high + average_low + average_close) / (CCI_PERIOD * 3);
+}
+
+float calculate_mean_absolute_deviation(
+    const std::vector<std::string> &stock_data, i16 beginning) {
+  float mean{};
+
+  for (i16 i{beginning}; i < beginning + CCI_PERIOD; ++i) {
+    mean += split_line(stock_data.at(i)).at(CLOSE);
+  }
+
+  mean /= CCI_PERIOD;
+
+  float distances{};
+  for (i16 i{beginning}; i < beginning + CCI_PERIOD; ++i) {
+    distances += std::abs(mean - split_line(stock_data.at(i)).at(CLOSE));
+  }
+
+  return distances / CCI_PERIOD;
+}
+
+float calculate_SMA(i16 beg, i16 end,
+                    const std::vector<std::string> &stock_data, i16 period) {
+  float sum = 0;
+  for (i16 i = beg; i <= end; ++i)
+    sum += split_line(stock_data.at(i)).at(CLOSE);
+  return sum / period;
+}
+
+std::vector<float>
+init_commodity_channel_index(const std::vector<std::string> &stock_data) {
+  std::vector<float> cci_vec{};
+
+  for (i16 i{14}; i < stock_data.size(); ++i) {
+    float simple_average =
+        calculate_SMA(i - CCI_PERIOD + 1, i, stock_data, CCI_PERIOD);
+    float mad = calculate_mean_absolute_deviation(stock_data, i - CCI_PERIOD);
+    float typical_price = calculate_typical_price(stock_data, i - CCI_PERIOD);
+
+    float numerator = typical_price - simple_average;
+    float denominator = mad * 0.015;
+    cci_vec.push_back(numerator / denominator);
+  }
+  return cci_vec;
 }

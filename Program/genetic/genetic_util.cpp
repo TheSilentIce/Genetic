@@ -3,7 +3,6 @@
 #include <cstdlib>
 #include <ctime>
 #include <random>
-#include <string>
 #include <vector>
 
 constexpr float ALPHA = 0.5;
@@ -14,7 +13,6 @@ constexpr double POWER = 4.0 / (DISTRiBUTION_INDEX + 1);
 // constexpr i16 MAC_CACHE_LINE = 128;
 
 std::default_random_engine &get_engine() {
-
   static std::default_random_engine eng(std::random_device{}());
   return eng;
 }

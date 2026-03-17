@@ -99,12 +99,15 @@ tickers = [
     "DRS",
     "BWXT",
 ]
+
+crypto = ["BTC-USD", "ETH-USD", "LINK-USD"]
+
 # ── Adjustable split ratio ──────────────────────────────────────────────────
 # Fraction of data used for TRAINING  (e.g. 0.8 = 80 % train, 20 % test)
 TRAIN_RATIO = 0.8
 # ───────────────────────────────────────────────────────────────────────────
 
-df = yf.download(tickers, period="2y", group_by="ticker")
+df = yf.download(crypto, period="2y", group_by="ticker")
 
 
 def build_rows(tickers, df, date_slice):
@@ -130,8 +133,8 @@ split_idx = int(len(all_dates) * TRAIN_RATIO)
 train_dates = all_dates[:split_idx]
 test_dates = all_dates[split_idx:]
 
-train_rows = build_rows(tickers, df, train_dates)
-test_rows = build_rows(tickers, df, test_dates)
+train_rows = build_rows(crypto, df, train_dates)
+test_rows = build_rows(crypto, df, test_dates)
 
 os.makedirs("../data", exist_ok=True)
 
