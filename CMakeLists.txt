@@ -10,8 +10,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-add_compile_definitions(PROJECT_ROOT="${CMAKE_SOURCE_DIR}")
-
+add_compile_definitions(PROJECT_ROOT=\"${CMAKE_SOURCE_DIR}\")
 add_executable(run-algorithm Program/genetic/main.cpp)
 add_executable(get-data Program/data-processing/runner.cpp)
 
