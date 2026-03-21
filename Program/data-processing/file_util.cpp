@@ -42,6 +42,7 @@ void create_csv(std::vector<std::vector<std::string>> &data,
     std::vector<float> high_percentage = prices_to_percentage(vec, HIGH);
     std::vector<float> low_percentage = prices_to_percentage(vec, LOW);
     std::vector<float> open_percentage = prices_to_percentage(vec, OPEN);
+    std::vector<float> volume_percentage = prices_to_percentage(vec, VOLUME);
 
     std::vector<int> obv = init_on_balance_volumes(vec);
     std::vector<float> rsi = initialize_RSI(vec);
@@ -60,7 +61,7 @@ void create_csv(std::vector<std::vector<std::string>> &data,
       new_line += std::to_string(close_percentage.at(j - 14)) + ',';
       new_line += std::to_string(high_percentage.at(j - 14)) + ',';
       new_line += std::to_string(low_percentage.at(j - 14)) + ',';
-      new_line += std::to_string(line.at(VOLUME)) + ',';
+      new_line += std::to_string(volume_percentage.at(j - 14)) + ',';
       new_line += std::to_string(obv.at(j - 14)) + ',';
       new_line += std::to_string(rsi.at(j - 14)) + ',';
       new_line += std::to_string(sma.at(j - 14)) + ',';
@@ -88,13 +89,13 @@ void create_csv(std::vector<std::vector<std::string>> &data,
  */
 std::vector<std::vector<std::string>> read_stocks(const std::string &filepath) {
   std::ifstream data_file(filepath);
+
   if (!data_file.is_open()) {
     std::cerr << "File not Open" << filepath << '\n';
     return {};
   }
 
   std::string line;
-
   std::vector<std::vector<std::string>> data{};
 
   std::vector<std::string> a{};

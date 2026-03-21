@@ -67,7 +67,6 @@ def compute_stats(pred: np.ndarray, actual: np.ndarray) -> dict:
         "mae": abs_errors.mean() * 100,  # mean absolute error (pp)
         "mad": np.median(abs_errors) * 100,  # median absolute deviation (pp)
         "rmse": np.sqrt((errors**2).mean()) * 100,  # root mean squared error (pp)
-        "mape": np.nanmean(pct_errors),  # mean absolute % error
         "std_err": abs_errors.std() * 100,  # std of absolute errors (pp)
         "max_err": abs_errors.max() * 100,  # worst single prediction (pp)
         "bias": errors.mean() * 100,  # +ve = over-predicts, -ve = under

@@ -100,12 +100,28 @@ tickers = [
     "BWXT",
 ]
 
-crypto = ["BTC-USD", "ETH-USD", "LINK-USD"]
+crypto = [
+    "BTC-USD",
+    "ETH-USD",
+    "BNB-USD",
+    "XRP-USD",
+    "SOL-USD",
+    "TRX-USD",
+    "DOGE-USD",
+    "ADA-USD",
+    "DOT-USD",
+    "BCH-USD",
+    "LINK-USD",
+    "XLM-USD",
+    "AVAX-USD",
+    "LTC-USD",
+]
 
 TRAIN_RATIO = 0.8
 # ───────────────────────────────────────────────────────────────────────────
 
-df = yf.download(crypto, period="2y", group_by="ticker")
+df = yf.download(crypto, period="5y", group_by="ticker")
+raw = yf.download(crypto, period="2mo", group_by="ticker")
 
 
 def build_rows(tickers, df, date_slice):
@@ -132,6 +148,10 @@ test_dates = all_dates[split_idx:]
 
 train_rows = build_rows(crypto, df, train_dates)
 test_rows = build_rows(crypto, df, test_dates)
+
+all_dates = raw.index.sort_values()
+raw_rows = build_rows(crypto, raw, all_dates)
+pd.DataFrame(raw_rows).to_csv("../data/om_nom.csv", index=False, header=False)
 
 os.makedirs("../data", exist_ok=True)
 

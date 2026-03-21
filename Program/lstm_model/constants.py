@@ -31,6 +31,6 @@ HIDDEN_DIM = 256
 LEARNING_RATE = 0.001
 NUM_EPOCHS = 120
 BATCH_SIZE = 64
-ALPHA = 0.5
+ALPHA = 0.8
 N_SPLITS = 5  # number of walk-forward folds
 gpu = torch.device("mps" if torch.backends.mps.is_available() else "cpu")

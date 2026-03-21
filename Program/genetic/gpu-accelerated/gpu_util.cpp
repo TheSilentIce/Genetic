@@ -59,9 +59,7 @@ int main() {
   commandBuffer->commit();
   commandBuffer->waitUntilCompleted();
 
-  // Access results if needed
   float *results = (float *)portfoliosBuffer->contents();
-  // e.g., results[i * SIZE + j] is j-th float of i-th portfolio
 
   portfoliosBuffer->release();
   encoder->release();

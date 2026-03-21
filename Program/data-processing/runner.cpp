@@ -18,9 +18,15 @@ int main() {
   std::filesystem::path testpath =
       std::filesystem::path(PROJECT_ROOT) / "Program" / "data" / "testing.csv";
 
-  auto data1 = read_stocks(testpath.string());
+  data = read_stocks(testpath.string());
   std::string testing = "new_testing.csv";
-  create_csv(data1, testing);
+  create_csv(data, testing);
+
+  std::filesystem::path rawPath =
+      std::filesystem::path(PROJECT_ROOT) / "Program" / "data" / "om_nom.csv";
+  data = read_stocks(rawPath.string());
+  std::string new_raw = "new_omnom.csv";
+  create_csv(data, new_raw);
 
   return 0;
 }
