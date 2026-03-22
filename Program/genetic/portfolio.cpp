@@ -7,5 +7,5 @@ Portfolio::Portfolio(std::vector<float> stock_map, double balance) {
 }
 const std::vector<float> &Portfolio::get_stock_map() const { return stock_map; }
 std::vector<float> &Portfolio::get_dollar_values(int days_past_start) {
-
+  
 }
