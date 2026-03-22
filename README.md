@@ -19,7 +19,7 @@ cmake --build build
 ## How to run
 First, you must get initial data 
 ```
-cd Program/lstm_model/
+c Program/lstm_model/
 uv run data.py
 ```
 
@@ -39,6 +39,8 @@ It generates a prediction of prices for a set time interval.
 
 The Genetic Algorithm then generates a portfolio based on those prices as well as other factors(risk/reward/etc..)
 
-## Future
-Implementing Metal and CUDA for GPU acceleration
-
+## TODO
+update cmake to standardize where executables are
+implement concurrency for pre-processing
+create CLI program
+implement magnitude accuracy indicators
