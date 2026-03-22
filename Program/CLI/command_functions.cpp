@@ -15,19 +15,15 @@ void help() {
 void build() {
 #if __APPLE__
   std::cout << "Apple system\n";
-  system("rm -rf build");
-  std::cout << "deleted build dir\n";
-  system("cmake -B build");
-  system("cmake --build build");
-  system("touch lebron.txt");
+  system("sh rebuild.sh");
   std::cout << "rebuilt build dir\n";
 
 #elif _WIN32
   std::cout << "Windows System\n";
-  system("rd /s /q build");
-  system("cmake -B build");
-  system("cmake --build build");
+  system("rebuild.bat");
+  std::exit(0);
 #else
   std::cout << "idk\n";
+  std::exit(0);
 #endif
 }
