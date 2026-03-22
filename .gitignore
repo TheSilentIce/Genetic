@@ -10,3 +10,4 @@ algo
 .DS_STORE
 *.pth
 # *.txt
+predictions.txt

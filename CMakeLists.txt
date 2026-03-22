@@ -21,13 +21,13 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_MINSIZEREL "${EXECUTABLE_OUTPUT_DIR}")
 
 add_executable(run-algorithm Program/genetic/main.cpp)
 add_executable(get-data Program/data-processing/runner.cpp)
-add_executable(cli Program/CLI/starter.cpp)
+add_executable(genetic-cli Program/CLI/starter.cpp)
 
 add_subdirectory(Program/data-processing)
 add_subdirectory(Program/genetic)
 add_subdirectory(Program/CLI)
 
-set_target_properties(cli PROPERTIES
+set_target_properties(genetic-cli PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}"
     RUNTIME_OUTPUT_DIRECTORY_DEBUG "${CMAKE_SOURCE_DIR}"
     RUNTIME_OUTPUT_DIRECTORY_RELEASE "${CMAKE_SOURCE_DIR}"

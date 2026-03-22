@@ -1,6 +1,9 @@
 #include "command_functions.h"
 #include <cstdlib>
 #include <iostream>
+#include <string>
+#include <sys/_types/_pid_t.h>
+#include <unistd.h>
 
 void help() {
   std::cout << "help - list out all commands, enter help [command] for info on "
@@ -14,9 +17,12 @@ void help() {
 
 void build() {
 #if __APPLE__
+  std::string pid = std::to_string(getpid());
+  std::cout << "PID: " << pid << '\n';
   std::cout << "Apple system\n";
-  system("sh rebuild.sh");
-  std::cout << "rebuilt build dir\n";
+  std::string s{"./rebuild.sh " + pid};
+
+  system(s.c_str());
 
 #elif _WIN32
   std::cout << "Windows System\n";
