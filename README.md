@@ -19,7 +19,7 @@ cmake --build build
 ## How to run
 First, you must get initial data 
 ```
-c Program/lstm_model/
+cd Program/lstm_model/
 uv run data.py
 ```
 
