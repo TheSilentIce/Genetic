@@ -12,17 +12,35 @@ constexpr float SMOOTHING_OVER_PERIOD =
     SMOOTHING_FACTOR / (MOVING_AVERAGE_PERIOD + 1);
 constexpr i16 CCI_PERIOD = 7;
 
+// std::vector<float>
+// prices_to_percentage(const std::vector<std::string> &stock_data, i8 key) {
+//   std::vector<float> vec{};
+//   vec.reserve(stock_data.size() - 14);
+//
+//   for (i16 i = 14; i < stock_data.size(); ++i) {
+//     float prev = split_line(stock_data.at(i - 1))[key];
+//     float curr = split_line(stock_data.at(i))[key];
+//     float percentage = (curr - prev) / prev;
+//     vec.push_back(percentage);
+//   }
+//   return vec;
+// }
+
 std::vector<float>
 prices_to_percentage(const std::vector<std::string> &stock_data, i8 key) {
   std::vector<float> vec{};
   vec.reserve(stock_data.size() - 14);
 
-  for (i16 i = 14; i < stock_data.size(); ++i) {
-    float prev = split_line(stock_data.at(i - 1)).at(key);
-    float curr = split_line(stock_data.at(i)).at(key);
+  float prev = split_line(stock_data.at(13))[key];
+  float curr = split_line(stock_data.at(14))[key];
+
+  for (i16 i = 15; i < stock_data.size(); ++i) {
     float percentage = (curr - prev) / prev;
     vec.push_back(percentage);
+    prev = curr;
+    curr = split_line(stock_data.at(i))[key];
   }
+  vec.push_back((curr - prev) / prev);
   return vec;
 }
 
@@ -38,13 +56,13 @@ std::vector<float> initialize_RSI(const std::vector<std::string> &stock_data) {
   float avg_gain = 0;
   float avg_loss = 0;
 
-  float before = split_line(stock_data.at(0)).at(CLOSE);
+  float before = split_line(stock_data.at(0))[CLOSE];
   float curr{};
 
   // initialize rsi
   for (i16 i = 1; i <= INITIAL_DAYS; ++i) {
-    std::vector<double> a = split_line(stock_data.at(i));
-    curr = a.at(CLOSE);
+    std::array<double, 5> a = split_line(stock_data.at(i));
+    curr = a[CLOSE];
 
     if (curr - before >= 0) {
       avg_gain += curr - before;
@@ -61,7 +79,7 @@ std::vector<float> initialize_RSI(const std::vector<std::string> &stock_data) {
   rsi_vector.push_back(100 - (100 / (1 + avg_gain / avg_loss)));
 
   for (i16 i = INITIAL_DAYS; i < stock_data.size(); ++i) {
-    curr = split_line(stock_data.at(i)).at(CLOSE);
+    curr = split_line(stock_data.at(i))[CLOSE];
     float rsi = calculate_RSI(avg_gain, avg_loss, curr, before);
 
     rsi_vector.push_back(rsi);
@@ -106,8 +124,7 @@ float calculate_SMA(i16 beg, i16 end,
                     const std::vector<std::string> &stock_data) {
   float sum = 0;
   for (i16 i = beg; i <= end; ++i) {
-    auto line = split_line(stock_data.at(i));
-    sum += line.at(CLOSE);
+    sum += split_line(stock_data.at(i))[CLOSE];
   }
   return sum / MOVING_AVERAGE_PERIOD;
 }
@@ -125,7 +142,7 @@ std::vector<float> init_EMA(const std::vector<std::string> &stock_data) {
   ema_vector.push_back(ema);
 
   for (i16 i = 14; i < stock_data.size(); ++i) {
-    float price = split_line(stock_data.at(i)).at(CLOSE);
+    float price = split_line(stock_data.at(i))[CLOSE];
     ema = calculate_EMA(ema, price);
     ema_vector.push_back(ema);
   }
@@ -197,11 +214,11 @@ float calculate_SO_K(const std::vector<std::string> &stock_data,
 
   for (i16 i = beginning; i < beginning + 14; ++i) {
     auto line = split_line(stock_data.at(i));
-    lowest = std::min(lowest, line.at(LOW));
-    highest = std::max(highest, line.at(HIGH));
+    lowest = std::min(lowest, line[LOW]);
+    highest = std::max(highest, line[HIGH]);
   }
 
-  double curr_close = split_line(stock_data.at(beginning + 13)).at(CLOSE);
+  double curr_close = split_line(stock_data.at(beginning + 13))[CLOSE];
 
   if (highest == lowest)
     return 0.0f;
@@ -233,15 +250,21 @@ std::vector<int>
 init_on_balance_volumes(const std::vector<std::string> &stock_data) {
   std::vector<int> obv_vec{};
 
-  int obv = split_line(stock_data.at(13)).at(VOLUME);
+  int obv = split_line(stock_data.at(13))[VOLUME];
+  float prev_price = split_line(stock_data.at(13))[CLOSE];
+  float curr_price = split_line(stock_data.at(14))[CLOSE];
+  i32 volume = split_line(stock_data.at(14))[VOLUME];
 
-  for (i16 i{14}; i < stock_data.size(); ++i) {
-    float prev_price = split_line(stock_data.at(i - 1)).at(CLOSE);
-    float curr_price = split_line(stock_data.at(i)).at(CLOSE);
-    int volume = split_line(stock_data.at(i)).at(VOLUME);
+  for (i16 i{15}; i < stock_data.size(); ++i) {
     obv = calculate_on_balance_volume(curr_price, prev_price, obv, volume);
     obv_vec.push_back(obv);
+
+    prev_price = split_line(stock_data.at(i - 1))[CLOSE];
+    curr_price = split_line(stock_data.at(i))[CLOSE];
+    volume = split_line(stock_data.at(i))[VOLUME];
   }
+  obv = calculate_on_balance_volume(curr_price, prev_price, obv, volume);
+  obv_vec.push_back(obv);
 
   return obv_vec;
 }
@@ -264,9 +287,9 @@ float calculate_typical_price(const std::vector<std::string> &stock_data,
   float average_close{};
 
   for (i16 i{beginning}; i < beginning + CCI_PERIOD; ++i) {
-    average_high += split_line(stock_data.at(i)).at(HIGH);
-    average_low += split_line(stock_data.at(i)).at(LOW);
-    average_close += split_line(stock_data.at(i)).at(CLOSE);
+    average_high += split_line(stock_data.at(i))[HIGH];
+    average_low += split_line(stock_data.at(i))[LOW];
+    average_close += split_line(stock_data.at(i))[CLOSE];
   }
 
   return (average_high + average_low + average_close) / (CCI_PERIOD * 3);
@@ -277,14 +300,14 @@ float calculate_mean_absolute_deviation(
   float mean{};
 
   for (i16 i{beginning}; i < beginning + CCI_PERIOD; ++i) {
-    mean += split_line(stock_data.at(i)).at(CLOSE);
+    mean += split_line(stock_data.at(i))[CLOSE];
   }
 
   mean /= CCI_PERIOD;
 
   float distances{};
   for (i16 i{beginning}; i < beginning + CCI_PERIOD; ++i) {
-    distances += std::abs(mean - split_line(stock_data.at(i)).at(CLOSE));
+    distances += std::abs(mean - split_line(stock_data.at(i))[CLOSE]);
   }
 
   return distances / CCI_PERIOD;
@@ -294,7 +317,7 @@ float calculate_SMA(i16 beg, i16 end,
                     const std::vector<std::string> &stock_data, i16 period) {
   float sum = 0;
   for (i16 i = beg; i <= end; ++i)
-    sum += split_line(stock_data.at(i)).at(CLOSE);
+    sum += split_line(stock_data.at(i))[CLOSE];
   return sum / period;
 }
 
