@@ -13,6 +13,7 @@ int main() {
 
   auto start = std::chrono::system_clock::now();
   auto data = read_stocks(filepath.string());
+
   std::string training = "new_training.csv";
   create_csv(data, training);
   auto end = std::chrono::system_clock::now();
@@ -20,14 +21,14 @@ int main() {
                   .count();
   std::cout << "Time it took: " << time << '\n';
 
-  start = std::chrono::system_clock::now();
-  data = read_stocks(filepath.string());
-  std::string training1 = "new_training1.csv";
-  create_csv_faster(data, training);
-  end = std::chrono::system_clock::now();
-  time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start)
-             .count();
-  std::cout << "Time it took: " << time << '\n';
+  // start = std::chrono::system_clock::now();
+  // data = read_stocks(filepath.string());
+  // std::string training1 = "new_training1.csv";
+  // create_csv_faster(data, training);
+  // end = std::chrono::system_clock::now();
+  // time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start)
+  //            .count();
+  // std::cout << "Time it took: " << time << '\n';
 
   // std::filesystem::path testpath =
   //     std::filesystem::path(PROJECT_ROOT) / "Program" / "data" /

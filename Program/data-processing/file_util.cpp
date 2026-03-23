@@ -3,6 +3,8 @@
 #include "calculations.h"
 #include <algorithm>
 #include <array>
+#include <charconv>
+#include <chrono>
 #include <cstdio>
 #include <cstring>
 #include <filesystem>
@@ -16,6 +18,17 @@
 
 constexpr i16 NUM_TICKETS = 500;
 
+Timer::Timer() {}
+
+void Timer::start_time() { start = std::chrono::system_clock::now(); }
+
+void Timer::end_time(std::string s) {
+  auto end = std::chrono::system_clock::now();
+  auto time = std::chrono::duration_cast<std::chrono::microseconds>(end - start)
+                  .count();
+
+  std::cout << "It took " << s << " " << time << " µs\n";
+}
 /**
  * this generates the new_csv file for the LSTM to read from
  *The first line added to the file is the column names
@@ -42,26 +55,25 @@ void create_csv_faster(std::vector<std::vector<std::string>> &data,
       "Ticket,Open,Close,High,Low,Volume,OBV,RSI,SMA,EMA,%K,%D,CCI";
 
   fwrite(header, strlen(header), 1, fptr);
+  Timer t = Timer();
 
   for (i16 i = 0; i < data.size(); ++i) {
     const std::vector<std::string> vec = data.at(i);
-    if (vec.size() < 30) {
-      continue;
-    }
+    const std::vector<PriceRow> rows = break_apart(vec);
 
-    std::vector<float> close_percentage = prices_to_percentage(vec, CLOSE);
-    std::vector<float> high_percentage = prices_to_percentage(vec, HIGH);
-    std::vector<float> low_percentage = prices_to_percentage(vec, LOW);
-    std::vector<float> open_percentage = prices_to_percentage(vec, OPEN);
-    std::vector<float> volume_percentage = prices_to_percentage(vec, VOLUME);
+    std::vector<float> close_percentage = prices_to_percentage(rows, CLOSE);
+    std::vector<float> high_percentage = prices_to_percentage(rows, HIGH);
+    std::vector<float> low_percentage = prices_to_percentage(rows, LOW);
+    std::vector<float> open_percentage = prices_to_percentage(rows, OPEN);
+    std::vector<float> volume_percentage = prices_to_percentage(rows, VOLUME);
 
-    std::vector<int> obv = init_on_balance_volumes(vec);
-    std::vector<float> rsi = initialize_RSI(vec);
-    std::vector<float> sma = init_SMA(vec);
-    std::vector<float> ema = init_EMA(vec);
-    std::vector<float> so_k = init_SO_K(vec);
+    std::vector<int> obv = init_on_balance_volumes(rows);
+    std::vector<float> rsi = initialize_RSI(rows);
+    std::vector<float> sma = init_SMA(rows);
+    std::vector<float> ema = init_EMA(rows);
+    std::vector<float> so_k = init_SO_K(rows);
     std::vector<float> so_d = init_SO_D(so_k);
-    std::vector<float> cci = init_commodity_channel_index(vec);
+    std::vector<float> cci = init_commodity_channel_index(rows);
 
     for (i16 j = 14; j < vec.size(); ++j) {
       char line[1024];
@@ -99,22 +111,24 @@ void create_csv(std::vector<std::vector<std::string>> &data,
   cleaningData(data);
 
   file << "Ticket,Open,Close,High,Low,Volume,OBV,RSI,SMA,EMA,%K,%D,CCI" << '\n';
+  Timer t = Timer();
   for (i16 i = 0; i < data.size(); ++i) {
     const std::vector<std::string> vec = data.at(i);
 
-    std::vector<float> close_percentage = prices_to_percentage(vec, CLOSE);
-    std::vector<float> high_percentage = prices_to_percentage(vec, HIGH);
-    std::vector<float> low_percentage = prices_to_percentage(vec, LOW);
-    std::vector<float> open_percentage = prices_to_percentage(vec, OPEN);
-    std::vector<float> volume_percentage = prices_to_percentage(vec, VOLUME);
+    const std::vector<PriceRow> rows = break_apart(vec);
+    std::vector<float> close_percentage = prices_to_percentage(rows, CLOSE);
+    std::vector<float> high_percentage = prices_to_percentage(rows, HIGH);
+    std::vector<float> low_percentage = prices_to_percentage(rows, LOW);
+    std::vector<float> open_percentage = prices_to_percentage(rows, OPEN);
+    std::vector<float> volume_percentage = prices_to_percentage(rows, VOLUME);
 
-    std::vector<int> obv = init_on_balance_volumes(vec);
-    std::vector<float> rsi = initialize_RSI(vec);
-    std::vector<float> sma = init_SMA(vec);
-    std::vector<float> ema = init_EMA(vec);
-    std::vector<float> so_k = init_SO_K(vec);
+    std::vector<int> obv = init_on_balance_volumes(rows);
+    std::vector<float> rsi = initialize_RSI(rows);
+    std::vector<float> sma = init_SMA(rows);
+    std::vector<float> ema = init_EMA(rows);
+    std::vector<float> so_k = init_SO_K(rows);
     std::vector<float> so_d = init_SO_D(so_k);
-    std::vector<float> cci = init_commodity_channel_index(vec);
+    std::vector<float> cci = init_commodity_channel_index(rows);
 
     for (i16 j = 14; j < vec.size(); ++j) {
       std::string new_line;
@@ -125,10 +139,12 @@ void create_csv(std::vector<std::vector<std::string>> &data,
       new_line += std::to_string(high_percentage.at(j - 14)) + ',';
       new_line += std::to_string(low_percentage.at(j - 14)) + ',';
       new_line += std::to_string(volume_percentage.at(j - 14)) + ',';
+
       new_line += std::to_string(obv.at(j - 14)) + ',';
       new_line += std::to_string(rsi.at(j - 14)) + ',';
       new_line += std::to_string(sma.at(j - 14)) + ',';
       new_line += std::to_string(ema.at(j - 14)) + ',';
+
       new_line += std::to_string(so_k.at(j - 14)) + ',';
       if (j - 14 < so_d.size() - 1) {
         new_line += std::to_string(so_d.at(j - 14)) + ',';
@@ -152,48 +168,37 @@ void create_csv(std::vector<std::vector<std::string>> &data,
 std::vector<std::vector<std::string>> read_stocks(const std::string &filepath) {
   std::ifstream data_file(filepath);
 
-  std::string line;
+  if (!data_file.is_open()) {
+    std::cerr << "File Not Open: " << filepath << '\n';
+    return {};
+  }
+
+  std::string line{};
   std::vector<std::vector<std::string>> data{};
-  std::vector<std::string> a{};
+
+  std::vector<std::string> ticket{};
+  bool isFirst = true;
 
   while (std::getline(data_file, line)) {
-    std::stringstream ss(line);
-    std::string field;
-    std::vector<std::string> fields;
-
-    // Split line by commas
-    while (std::getline(ss, field, ',')) {
-      fields.push_back(field);
+    if (isFirst) {
+      ticket.push_back(line);
+      isFirst = false;
+      continue;
     }
 
-    // Check if all fields except the first are empty
-    bool is_separator = true;
-    for (size_t i = 1; i < fields.size(); ++i) {
-      if (!fields[i].empty()) {
-        is_separator = false;
-        break;
-      }
-    }
-
-    if (!is_separator) {
-      a.push_back(line);
+    if (line == ",,,,,") {
+      data.push_back(std::move(ticket));
+      isFirst = true;
+      ticket.clear();
     } else {
-      if (!a.empty()) {
-        data.push_back(std::move(a));
-        a.clear();
+      if (line.find(",,") == std::string::npos) {
+        ticket.push_back(line);
       }
     }
   }
 
-  // Push any remaining data
-  if (!a.empty()) {
-    data.push_back(std::move(a));
-  }
-
-  data_file.close();
   return data;
 }
-
 /**
  * this just gets rid of the name and
  * yfinance's header:
@@ -228,6 +233,7 @@ get_names(const std::vector<std::vector<std::string>> &data) {
     ticket = v.at(0);
 
     ticket.erase(std::remove(ticket.begin(), ticket.end(), ','), ticket.end());
+
     tickets.push_back(std::move(ticket));
   }
   return tickets;
@@ -238,35 +244,22 @@ get_names(const std::vector<std::vector<std::string>> &data) {
  * the indicies to access said data can be found in
  * file_util.h
  */
-std::array<double, 5> split_line(std::string line) {
+std::array<double, 5> split_line(const std::string_view &line) {
   std::array<double, 5> info{};
-  std::stringstream ss(line);
 
-  std::string temp;
+  const char *p = line.data();
+  const char *end = p + line.size();
 
-  char del = ',';
-  i16 i = 0;
+  // skip first column
+  while (p < end && *p != ',')
+    ++p;
+  if (p < end)
+    ++p;
 
-  bool a = true;
-  while (std::getline(ss, temp, del)) {
-    if (a) {
-      a = false;
-      continue;
-    }
-
-    // info.push_back(std::stod(std::move(temp)));
-
-    auto aaa = temp;
-    try {
-
-      float b = std::stod(std::move(temp));
-    } catch (const std::invalid_argument &e) {
-      std::cout << e.what() << '\n';
-      std::cout << aaa << '\n';
-      std::exit(1);
-    }
-
-    i += 1;
+  for (int i = 0; i < 5 && p < end; ++i) {
+    char *col_end;
+    info[i] = std::strtod(p, &col_end);
+    p = col_end + 1; // skip comma
   }
   return info;
 }
