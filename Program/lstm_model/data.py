@@ -120,8 +120,8 @@ crypto = [
 TRAIN_RATIO = 0.8
 # ───────────────────────────────────────────────────────────────────────────
 
-df = yf.download(crypto, period="5y", group_by="ticker")
-raw = yf.download(crypto, period="2mo", group_by="ticker")
+df = yf.download(tickers, period="5y", group_by="ticker")
+raw = yf.download(tickers, period="2mo", group_by="ticker")
 
 
 def build_rows(tickers, df, date_slice):
@@ -146,11 +146,11 @@ split_idx = int(len(all_dates) * TRAIN_RATIO)
 train_dates = all_dates[:split_idx]
 test_dates = all_dates[split_idx:]
 
-train_rows = build_rows(crypto, df, train_dates)
-test_rows = build_rows(crypto, df, test_dates)
+train_rows = build_rows(tickers, df, train_dates)
+test_rows = build_rows(tickers, df, test_dates)
 
 all_dates = raw.index.sort_values()
-raw_rows = build_rows(crypto, raw, all_dates)
+raw_rows = build_rows(tickers, raw, all_dates)
 pd.DataFrame(raw_rows).to_csv("../data/om_nom.csv", index=False, header=False)
 
 os.makedirs("../data", exist_ok=True)
