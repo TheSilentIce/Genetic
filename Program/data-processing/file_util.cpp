@@ -1,22 +1,15 @@
 #include "file_util.h"
 #include "../types.h"
+#include "SafeQueue.h"
 #include "calculations.h"
 #include <algorithm>
-#include <array>
-#include <charconv>
-#include <chrono>
-#include <cstdio>
 #include <cstring>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
-#include <sstream>
-#include <stdexcept>
-#include <string>
+#include <string_view>
+#include <thread>
 #include <utility>
-#include <vector>
-
-constexpr i16 NUM_TICKETS = 500;
 
 Timer::Timer() {}
 
@@ -29,93 +22,37 @@ void Timer::end_time(std::string s) {
 
   std::cout << "It took " << s << " " << time << " µs\n";
 }
-/**
- * this generates the new_csv file for the LSTM to read from
- *The first line added to the file is the column names
- * Essentially we iterate over each stock and over each of their lines
- * the various factors are calculated accordingly and added
- *
- * You may notice that we start reading lines from index 14
- * This is because for a lot of the financial indicators, they require an
- * initial 14 days worth of data
- * Which means, we dont have the respective data for those first 14 days
- * thus, they are skipped
- */
 
-void create_csv_faster(std::vector<std::vector<std::string>> &data,
-                       std::string &name) {
-  std::filesystem::path fp =
-      std::filesystem::path(PROJECT_ROOT) / "Program" / "data" / name;
+SafeQueue<std::vector<std::string>> safe_queue{};
 
-  FILE *fptr;
-  fptr = fopen(fp.c_str(), "w");
-  std::vector<std::string> names = get_names(data);
-  cleaningData(data);
-  const char *header =
-      "Ticket,Open,Close,High,Low,Volume,OBV,RSI,SMA,EMA,%K,%D,CCI";
-
-  fwrite(header, strlen(header), 1, fptr);
-  Timer t = Timer();
-
-  for (i16 i = 0; i < data.size(); ++i) {
-    const std::vector<std::string> vec = data.at(i);
-    const std::vector<PriceRow> rows = break_apart(vec);
-
-    std::vector<float> close_percentage = prices_to_percentage(rows, CLOSE);
-    std::vector<float> high_percentage = prices_to_percentage(rows, HIGH);
-    std::vector<float> low_percentage = prices_to_percentage(rows, LOW);
-    std::vector<float> open_percentage = prices_to_percentage(rows, OPEN);
-    std::vector<float> volume_percentage = prices_to_percentage(rows, VOLUME);
-
-    std::vector<int> obv = init_on_balance_volumes(rows);
-    std::vector<float> rsi = initialize_RSI(rows);
-    std::vector<float> sma = init_SMA(rows);
-    std::vector<float> ema = init_EMA(rows);
-    std::vector<float> so_k = init_SO_K(rows);
-    std::vector<float> so_d = init_SO_D(so_k);
-    std::vector<float> cci = init_commodity_channel_index(rows);
-
-    for (i16 j = 14; j < vec.size(); ++j) {
-      char line[1024];
-      float d;
-      if (j - 14 < so_d.size() - 1) {
-        d = so_d.at(j - 14);
-      } else {
-        d = so_d.at(so_d.size() - 1);
-      }
-
-      int size = snprintf(
-          line, sizeof(line),
-          "%.2f,%.2f,%.2f,%.2f,%.2f,%d,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,",
-          open_percentage.at(j - 14), close_percentage.at(j - 14),
-          high_percentage.at(j - 14), low_percentage.at(j - 14),
-          volume_percentage.at(j - 14), obv.at(j - 14), rsi.at(j - 14),
-          sma.at(j - 14), ema.at(j - 14), so_k.at(j - 14), d, cci.at(j - 14));
-
-      fwrite(line, size, 1, fptr);
-      fwrite("\n", 1, 1, fptr);
-    }
-  }
-
-  fclose(fptr);
-}
-
-void create_csv(std::vector<std::vector<std::string>> &data,
-                std::string &name) {
+void writeFile(i32 tickets, std::string name) {
   std::filesystem::path fp =
       std::filesystem::path(PROJECT_ROOT) / "Program" / "data" / name;
 
   std::ofstream file;
   file.open(fp.string());
-  std::vector<std::string> names = get_names(data);
-  cleaningData(data);
+
+  i32 i{0};
 
   file << "Ticket,Open,Close,High,Low,Volume,OBV,RSI,SMA,EMA,%K,%D,CCI" << '\n';
   Timer t = Timer();
-  for (i16 i = 0; i < data.size(); ++i) {
-    const std::vector<std::string> vec = data.at(i);
+  while (i != tickets) {
+    std::vector<std::string> updated_ticket;
+    safe_queue.pop(updated_ticket);
+    for (std::string_view s : updated_ticket) {
+      file << s;
+    }
+    i++;
+  }
+  file.close();
+}
 
-    const std::vector<PriceRow> rows = break_apart(vec);
+void work(const std::vector<std::vector<std::string>> &data, i32 beg, i32 end,
+          std::vector<std::string> &names) {
+  for (i32 i{beg}; i < end; ++i) {
+    const std::vector<std::string> &ticket = data.at(i);
+    const std::vector<PriceRow> rows = break_apart(ticket);
+
     std::vector<float> close_percentage = prices_to_percentage(rows, CLOSE);
     std::vector<float> high_percentage = prices_to_percentage(rows, HIGH);
     std::vector<float> low_percentage = prices_to_percentage(rows, LOW);
@@ -130,7 +67,12 @@ void create_csv(std::vector<std::vector<std::string>> &data,
     std::vector<float> so_d = init_SO_D(so_k);
     std::vector<float> cci = init_commodity_channel_index(rows);
 
-    for (i16 j = 14; j < vec.size(); ++j) {
+    std::vector<std::string> updated_ticket{};
+
+    i16 SIZE = ticket.size();
+    updated_ticket.reserve(SIZE);
+
+    for (i16 j = 14; j < SIZE; ++j) {
       std::string new_line;
 
       new_line += names.at(i) + ',';
@@ -153,12 +95,53 @@ void create_csv(std::vector<std::vector<std::string>> &data,
       }
       new_line += std::to_string(cci.at(j - 14));
       new_line += '\n';
-
-      file << new_line;
+      updated_ticket.push_back(new_line);
     }
+    safe_queue.push(updated_ticket);
+  }
+}
+
+/**
+ * this generates the new_csv file for the LSTM to read from
+ *The first line added to the file is the column names
+ * Essentially we iterate over each stock and over each of their lines
+ * the various factors are calculated accordingly and added
+ *
+ * You may notice that we start reading lines from index 14
+ * This is because for a lot of the financial indicators, they require an
+ * initial 14 days worth of data
+ * Which means, we dont have the respective data for those first 14 days
+ * thus, they are skipped
+ */
+
+void create_csv(std::vector<std::vector<std::string>> &data,
+                std::string &name) {
+  cleaningData(data);
+
+  // one is the spawning thread, and one will be the file writer thread
+  i32 NUMBER_OF_WORKER_THREADS = std::thread::hardware_concurrency() - 2;
+  std::vector<std::string> names = get_names(data);
+  i32 WORK_PER_THREAD = names.size() / NUMBER_OF_WORKER_THREADS;
+
+  std::vector<std::thread> worker_threads;
+
+  i32 beg = 0;
+  i32 end = WORK_PER_THREAD;
+  for (i32 i{0}; i < NUMBER_OF_WORKER_THREADS; ++i) {
+    end = (beg + WORK_PER_THREAD) >= names.size() ? names.size()
+                                                  : beg + WORK_PER_THREAD;
+    end = (i == NUMBER_OF_WORKER_THREADS - 1) ? names.size() : end;
+    worker_threads.emplace_back(
+        [&data, &names, beg, end]() { work(data, beg, end, names); });
+
+    beg += WORK_PER_THREAD;
+  }
+  std::thread writer{writeFile, names.size(), name};
+  for (auto &t : worker_threads) {
+    t.join();
   }
 
-  file.close();
+  writer.join();
 }
 
 /**
@@ -212,29 +195,20 @@ std::vector<std::vector<std::string>> read_stocks(const std::string &filepath) {
 // }
 void cleaningData(std::vector<std::vector<std::string>> &data) {
   for (auto &vec : data) {
-    if (vec.size() >= 2) {
-      vec.erase(vec.begin()); // remove name
-      vec.erase(vec.begin()); // remove yfinance header
-    } else if (vec.size() == 1) {
-      vec.erase(vec.begin()); // only name, remove it
-    }
-    // if vec is empty, do nothing
+    vec.erase(vec.begin() + 1);
   }
 }
 
 std::vector<std::string>
 get_names(const std::vector<std::vector<std::string>> &data) {
   std::vector<std::string> tickets{};
-  tickets.reserve(NUM_TICKETS);
-
-  std::string ticket{};
 
   for (const std::vector<std::string> &v : data) {
-    ticket = v.at(0);
+    std::string ticket = v.at(0);
 
     ticket.erase(std::remove(ticket.begin(), ticket.end(), ','), ticket.end());
 
-    tickets.push_back(std::move(ticket));
+    tickets.push_back(ticket);
   }
   return tickets;
 }
