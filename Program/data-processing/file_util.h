@@ -1,6 +1,8 @@
 #ifndef FILE_UTIL_H
 #define FILE_UTIL_H
 
+#include "../types.h"
+#include <array>
 #include <chrono>
 #include <string>
 #include <vector>
@@ -13,8 +15,11 @@ enum LineIndices {
   VOLUME = 4,
 };
 
-class Timer {
+void work(const std::vector<std::vector<std::string>> &data, i32 beg, i32 end,
+          std::vector<std::string> &names);
+void writeFile(i32 tickets, std::string name);
 
+class Timer {
   std::chrono::time_point<std::chrono::system_clock> start;
 
 public:
@@ -24,11 +29,9 @@ public:
 };
 
 void create_csv(std::vector<std::vector<std::string>> &data, std::string &name);
-void create_csv_faster(std::vector<std::vector<std::string>> &data,
-                       std::string &name);
 void cleaningData(std::vector<std::vector<std::string>> &data);
+
 std::vector<std::vector<std::string>> read_stocks(const std::string &filepath);
-// std::vector<double> split_line(std::string line);
 std::array<double, 5> split_line(const std::string_view &line);
 std::vector<std::string>
 get_names(const std::vector<std::vector<std::string>> &data);
