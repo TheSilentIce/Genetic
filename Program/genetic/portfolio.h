@@ -1,15 +1,21 @@
-#include <map>
-#include <vector>
 #ifndef PORTFOLIO_H
 #define PORTFOLIO_H
 
+#include <vector>
+#include <string>
+
 class Portfolio {
 private:
-  std::vector<float> stock_map;
+    std::vector<float> stock_map;
+    double balance;
+    int day;
 
 public:
-  Portfolio(std::vector<float> stock_map);
-  const std::vector<float> &get_stock_map() const;
+    Portfolio(std::vector<float> stock_map, double balance, int day);
+    const std::vector<float> &get_stock_map() const;
+    double get_balance() const { return balance; }
+    std::vector<float> get_dollar_values() const;
+    std::vector<float> get_share_counts(const std::vector<std::vector<std::string>>& all_stock_data, int day) const;
 };
 
 #endif
