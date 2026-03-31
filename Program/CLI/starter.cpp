@@ -5,7 +5,9 @@
 
 enum class Codes { help, quit, build, run, predict, clear, error };
 
-Codes convert(std::string s) {
+Codes convert(char *b) {
+  std::string s = b;
+
   if (s == "quit")
     return Codes::quit;
   if (s == "build")
@@ -23,20 +25,20 @@ Codes convert(std::string s) {
 }
 
 int main() {
+  system("clear");
   std::cout << "Genetic CLI started\n";
   bool running = true;
+  char *buffer = new char[100];
   while (running) {
     std::cout << "Enter input: ";
-    std::string s{};
-    std::cin >> s;
-
-    switch (convert(s)) {
+    std::cin.getline(buffer, 100);
+    switch (convert(buffer)) {
     case Codes::quit:
       running = false;
       std::cout << "Quitting...\n";
       break;
     case Codes::clear:
-      std::cout << "\033[2J\033[1;1H";
+      system("clear");
       break;
     case Codes::help:
       help();
@@ -45,8 +47,10 @@ int main() {
       build();
       break;
     default:
-      std::cout << "command not found\n";
+      std::cout << "Commando not found\n";
     }
   }
+
+  delete[] buffer;
   return 0;
 }
