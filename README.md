@@ -35,9 +35,9 @@ uv run main.py
 A Long Short-Term Memory model is trained on past historical data.
 Example inputs are opening price and Stochastic Oscillation
 
-It generates a prediction of prices for a set time interval.
-
-The Genetic Algorithm then generates a portfolio based on those prices as well as other factors(risk/reward/etc..)
+Technical indicators are computed day-by-day and written to a CSV, with all raw data being normalized. The model predicts percentage returns rather than raw prices.
+A PyTorch LSTM is trained on the normalized indicator data using a custom combined loss (MSE + directional penalty) to optimize both magnitude accuracy and directional accuracy.
+The Genetic Algorithm takes the LSTM's return predictions and optimizes a portfolio allocation across tickers, factoring in risk/reward tradeoffs.
 
 ## TODO
 update cmake to standardize where executables are
