@@ -102,19 +102,19 @@ tickers = [
 
 crypto = [
     "BTC-USD",
-    "ETH-USD",
-    "BNB-USD",
-    "XRP-USD",
-    "SOL-USD",
-    "TRX-USD",
-    "DOGE-USD",
-    "ADA-USD",
-    "DOT-USD",
-    "BCH-USD",
-    "LINK-USD",
-    "XLM-USD",
-    "AVAX-USD",
-    "LTC-USD",
+    # "ETH-USD",
+    # "BNB-USD",
+    # "XRP-USD",
+    # "SOL-USD",
+    # "TRX-USD",
+    # "DOGE-USD",
+    # "ADA-USD",
+    # "DOT-USD",
+    # "BCH-USD",
+    # "LINK-USD",
+    # "XLM-USD",
+    # "AVAX-USD",
+    # "LTC-USD",
 ]
 
 TRAIN_RATIO = 0.8

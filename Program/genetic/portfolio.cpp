@@ -1,4 +1,5 @@
 #include "portfolio.h"
+#include "genetic_util.h"
 #include <vector>
 #include <string>
 #include <sstream>
@@ -29,7 +30,7 @@ float get_close_price(const std::string& csv_line) {
 std::vector<float> Portfolio::get_dollar_values() const {
     std::vector<float> dollar_values;
     
-    for (size_t i = 0; i < stock_map.size(); ++i) {
+    for (int i = 0; i < stock_map.size(); ++i) {
         double initial_allocation = balance * stock_map[i];
         
         dollar_values.push_back(initial_allocation);
@@ -40,9 +41,42 @@ std::vector<float> Portfolio::get_share_counts(const std::vector<std::vector<std
     std::vector<float> shares;
     std::vector<float> current_values = get_dollar_values();
 
-    for (size_t i = 0; i < stock_map.size(); ++i) {
+    for (int i = 0; i < stock_map.size(); ++i) {
         float current_price = get_close_price(all_stock_data[i][cur_day]);
         shares.push_back(current_values[i] / current_price);
     }
     return shares;
+}
+std::vector<float> Portfolio::get_percentages(const std::vector<float>& shares, const std::vector<std::vector<std::string>>& all_stock_data, int cur_day) const {
+    std::vector<float> current_values;
+    double total_portfolio_value = 0.0;
+    for (int i = 0; i < shares.size(); i++) {
+        float current_price = get_close_price(all_stock_data[i][cur_day]);
+        float value = shares[i] * current_price;
+        
+        current_values.push_back(value);
+        total_portfolio_value += value;
+    }
+    std::vector<float> percentages;
+    if (total_portfolio_value > 0) {
+        for (float val : current_values) {
+            percentages.push_back(val / (float)total_portfolio_value);
+        }
+    } else {
+        percentages.assign(shares.size(), 0.0f);
+    }
+    return percentages;
+}
+void Portfolio::mutate(float prob_per_field) {
+  i16 size = stock_map.size();
+
+  for (i16 i{0}; i < size; ++i) {
+    float chance = random_float();
+
+    if (chance <= prob_per_field) {
+      stock_map[i] = stock_map[i] + 0.08; //<=== Mutation
+    }
+  }
+
+  normalize(stock_map);
 }

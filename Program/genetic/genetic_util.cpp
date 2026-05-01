@@ -145,17 +145,15 @@ void mutate(std::vector<float> child) {
   normalize(child);
 }
 
-Portfolio create_child(std::vector<float> child) { return Portfolio(child); }
+Portfolio create_child(std::vector<float> child) { return Portfolio(child, 10, 0); }
 
-Portfolio create_random_portfolio(const i16 size) {
+std::vector<float> create_random_array(const i16 size) {
   std::vector<float> props{};
   props.reserve(size);
-
   for (i16 i = 0; i < size; ++i) {
     float prop = random_float();
     props.push_back(prop);
   }
   normalize(props);
-  Portfolio port = Portfolio(props);
-  return port;
+  return props;
 }

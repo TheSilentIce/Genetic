@@ -14,5 +14,6 @@ void mutate(std::vector<float> &child);
 void normalize(std::vector<float> &child);
 
 Portfolio create_child(std::vector<float> &child);
-Portfolio create_random_portfolio(const i16 size);
+std::vector<float> create_random_array(const i16 size);
+float random_float();
 #endif
