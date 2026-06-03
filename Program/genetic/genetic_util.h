@@ -12,7 +12,7 @@ std::vector<float> blend_crossover(Portfolio *parent1, Portfolio *parent2);
 
 void mutate(std::vector<float> &child);
 void normalize(std::vector<float> &child);
-
+float random_float();
 Portfolio create_child(std::vector<float> &child);
 std::vector<float> create_random_array(const i16 size);
 float random_float();
