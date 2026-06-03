@@ -4,10 +4,9 @@
 #include <string>
 #include <sstream>
 
-Portfolio::Portfolio(std::vector<float> stock_map, double balance, int day) {
+Portfolio::Portfolio(std::vector<float> stock_map, double balance) {
     this->stock_map = stock_map;
     this->balance = balance;
-    this->day = day;
 }
 
 const std::vector<float>& Portfolio::get_stock_map() const { return stock_map; }
@@ -79,4 +78,7 @@ void Portfolio::mutate(float prob_per_field) {
   }
 
   normalize(stock_map);
+}
+void Portfolio::advance_time(const std::vector<std::vector<std::string>>& all_stock_data, int cur_day) {
+  stock_map = get_percentages(get_share_counts(all_stock_data, cur_day), all_stock_data, cur_day + 1);
 }
