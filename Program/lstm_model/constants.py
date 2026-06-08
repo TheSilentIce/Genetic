@@ -24,6 +24,7 @@ feature_cols = [
     "%K",
     "%D",
     "CCI",
+    "ATR",
 ]
 
 SEQUENCE = 30

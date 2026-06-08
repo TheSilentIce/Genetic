@@ -12,20 +12,6 @@ constexpr float SMOOTHING_OVER_PERIOD =
     SMOOTHING_FACTOR / (MOVING_AVERAGE_PERIOD + 1);
 constexpr i16 CCI_PERIOD = 7;
 
-// std::vector<float>
-// prices_to_percentage(const std::vector<PriceRow>&vec, i8 key) {
-//   std::vector<float> vec{};
-//   vec.reserve(vec.size() - 14);
-//
-//   for (i16 i = 14; i < vec.size(); ++i) {
-//     float prev = split_line(vec.at(i - 1))[key];
-//     float curr = split_line(vec.at(i))[key];
-//     float percentage = (curr - prev) / prev;
-//     vec.push_back(percentage);
-//   }
-//   return vec;
-// }
-
 std::vector<PriceRow> break_apart(const std::vector<std::string> &data) {
   std::vector<PriceRow> vec{};
   vec.reserve(data.size());
@@ -51,29 +37,9 @@ std::vector<float> prices_to_percentage(const std::vector<PriceRow> &vec,
   return per;
 }
 
-// std::vector<float>
-// prices_to_percentage(const std::vector<PriceRow>&vec, i8 key) {
-//   std::vector<float> vec{};
-//   vec.reserve(vec.size() - 14);
-//
-//   float prev = split_line(vec.at(13))[key];
-//   float curr = split_line(vec.at(14))[key];
-//
-//   for (i16 i = 15; i < vec.size(); ++i) {
-//     float percentage = (curr - prev) / prev;
-//     vec.push_back(percentage);
-//     prev = curr;
-//     curr = split_line(vec.at(i))[key];
-//   }
-//   vec.push_back((curr - prev) / prev);
-//   return vec;
-// }
-
 /**
  * This method creates a vector of Relative Strength Indices(RSI) for each day
  * We initialize the RSI as RSI is standardized as being a 2 week period
- *
- *
  */
 std::vector<float> initialize_RSI(const std::vector<PriceRow> &vec) {
   std::vector<float> rsi_vector{};
@@ -131,15 +97,16 @@ float calculate_RSI(float &avg_gain, float &avg_loss, float curr,
 /**
  * this method creates a vector for simple moving average
  */
-std::vector<float> init_SMA(const std::vector<PriceRow> &vec) {
+std::vector<float> init_SMA(const std::vector<float> &close_pct) {
   std::vector<float> sma_vector{};
-  for (i16 i = 14; i < vec.size(); ++i) {
-    float sma = calculate_SMA(i - 9, i - 1, vec);
-    sma_vector.push_back(sma);
+  for (i16 i = 10; i < close_pct.size(); ++i) {
+    float sum = 0;
+    for (i16 j = i - 10; j < i; ++j)
+      sum += close_pct[j];
+    sma_vector.push_back(sum / 10);
   }
   return sma_vector;
 }
-
 /**
  *  simple moving average is generally defined as the average price
  *  over a 10 day period. However, this can be changed as you want.
@@ -159,19 +126,21 @@ float calculate_SMA(i16 beg, i16 end, const std::vector<PriceRow> &vec) {
  * The idea is that stock prices are more influenced by their most recent
  * prices, so we should give more importance to said recent prices
  */
-std::vector<float> init_EMA(const std::vector<PriceRow> &vec) {
-  float ema = calculate_SMA(5, 14, vec);
+std::vector<float> init_EMA(const std::vector<float> &close_pct) {
+  float ema = 0;
+  for (i16 i = 0; i < 10; ++i)
+    ema += close_pct[i];
+  ema /= 10;
+
   std::vector<float> ema_vector{};
   ema_vector.push_back(ema);
 
-  for (i16 i = 14; i < vec.size(); ++i) {
-    float price = vec.at(i)[CLOSE];
-    ema = calculate_EMA(ema, price);
+  for (i16 i = 10; i < close_pct.size(); ++i) {
+    ema = calculate_EMA(ema, close_pct[i]);
     ema_vector.push_back(ema);
   }
   return ema_vector;
 }
-
 /**
  * Information taken from Investpedia's article on EMAs
  * The initial EMA is defined as just the simple moving average of first 10 days
@@ -290,8 +259,8 @@ std::vector<int> init_on_balance_volumes(const std::vector<PriceRow> &vec) {
   return obv_vec;
 }
 
-int calculate_on_balance_volume(float curr_price, float prev_price, i16 obv,
-                                i16 volume) {
+int calculate_on_balance_volume(float curr_price, float prev_price, i32 obv,
+                                i32 volume) {
   if (curr_price > prev_price)
     return obv + volume;
 
@@ -356,4 +325,30 @@ init_commodity_channel_index(const std::vector<PriceRow> &vec) {
     cci_vec.push_back(numerator / denominator);
   }
   return cci_vec;
+}
+
+float init_TR(const std::vector<PriceRow> &vec) {
+  float sum = vec[0][HIGH] - vec[0][LOW];
+  for (int i{1}; i < INITIAL_DAYS; ++i) {
+    sum += calculate_TR(vec, i);
+  }
+  return sum / INITIAL_DAYS;
+}
+
+float calculate_TR(const std::vector<PriceRow> &vec, i16 day) {
+  return std::max({vec[day][HIGH] - vec[day][LOW],
+                   std::abs(vec[day][HIGH] - vec[day - 1][CLOSE]),
+                   std::abs(vec[day][LOW] - vec[day - 1][CLOSE])});
+}
+
+std::vector<float> init_ATR(const std::vector<PriceRow> &vec) {
+  std::vector<float> atr_vec{};
+  float prev_TR = init_TR(vec);
+
+  for (i16 i{INITIAL_DAYS}; i < vec.size(); ++i) {
+    float curr_TR = (calculate_TR(vec, i) + prev_TR * 13) / 14;
+    atr_vec.push_back(curr_TR);
+    prev_TR = curr_TR;
+  }
+  return atr_vec;
 }

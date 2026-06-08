@@ -1,9 +1,6 @@
 #include "world.h"
 #include "../types.h"
 #include "genetic_util.h"
-#include <cstdint>
-#include <iostream>
-#include <random>
 #include <string>
 #include <vector>
 

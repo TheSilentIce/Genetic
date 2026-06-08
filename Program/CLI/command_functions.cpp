@@ -1,5 +1,6 @@
 #include "command_functions.h"
 #include "unistd.h"
+#include <cstdlib>
 #include <iostream>
 
 void help() {
@@ -23,5 +24,15 @@ void build() {
 #else
   std::cout << "idk\n";
   std::exit(0);
+#endif
+}
+
+void clear() { system("clear"); }
+
+void run() {
+#if _WIN32
+  system("./build/bin/get-data.exe");
+#else
+  system("./build/bin/get-data");
 #endif
 }

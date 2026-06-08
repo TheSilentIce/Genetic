@@ -34,7 +34,8 @@ void writeFile(i32 tickets, std::string name) {
 
   i32 i{0};
 
-  file << "Ticket,Open,Close,High,Low,Volume,OBV,RSI,SMA,EMA,%K,%D,CCI" << '\n';
+  file << "Ticket,Open,Close,High,Low,Volume,OBV,RSI,SMA,EMA,%K,%D,CCI,ATR"
+       << '\n';
   Timer t = Timer();
   while (i != tickets) {
     std::vector<std::string> updated_ticket;
@@ -61,39 +62,41 @@ void work(const std::vector<std::vector<std::string>> &data, i32 beg, i32 end,
 
     std::vector<int> obv = init_on_balance_volumes(rows);
     std::vector<float> rsi = initialize_RSI(rows);
-    std::vector<float> sma = init_SMA(rows);
-    std::vector<float> ema = init_EMA(rows);
+    std::vector<float> sma = init_SMA(close_percentage);
+    std::vector<float> ema = init_EMA(close_percentage);
     std::vector<float> so_k = init_SO_K(rows);
     std::vector<float> so_d = init_SO_D(so_k);
     std::vector<float> cci = init_commodity_channel_index(rows);
+    std::vector<float> atr = init_ATR(rows);
 
     std::vector<std::string> updated_ticket{};
 
+    std::string new_line;
     i16 SIZE = ticket.size();
     updated_ticket.reserve(SIZE);
+    i16 MIN_SIZE = std::min({(i16)close_percentage.size(), (i16)sma.size(),
+                             (i16)ema.size(), (i16)rsi.size(), (i16)obv.size(),
+                             (i16)cci.size(), (i16)atr.size()});
 
-    for (i16 j = 14; j < SIZE; ++j) {
-      std::string new_line;
-
+    for (i16 j = 0; j < MIN_SIZE; ++j) {
       new_line += names.at(i) + ',';
-      new_line += std::to_string(open_percentage.at(j - 14)) + ',';
-      new_line += std::to_string(close_percentage.at(j - 14)) + ',';
-      new_line += std::to_string(high_percentage.at(j - 14)) + ',';
-      new_line += std::to_string(low_percentage.at(j - 14)) + ',';
-      new_line += std::to_string(volume_percentage.at(j - 14)) + ',';
-
-      new_line += std::to_string(obv.at(j - 14)) + ',';
-      new_line += std::to_string(rsi.at(j - 14)) + ',';
-      new_line += std::to_string(sma.at(j - 14)) + ',';
-      new_line += std::to_string(ema.at(j - 14)) + ',';
-
-      new_line += std::to_string(so_k.at(j - 14)) + ',';
-      if (j - 14 < so_d.size() - 1) {
-        new_line += std::to_string(so_d.at(j - 14)) + ',';
+      new_line += std::to_string(open_percentage.at(j)) + ',';
+      new_line += std::to_string(close_percentage.at(j)) + ',';
+      new_line += std::to_string(high_percentage.at(j)) + ',';
+      new_line += std::to_string(low_percentage.at(j)) + ',';
+      new_line += std::to_string(volume_percentage.at(j)) + ',';
+      new_line += std::to_string(obv.at(j)) + ',';
+      new_line += std::to_string(rsi.at(j)) + ',';
+      new_line += std::to_string(sma.at(j)) + ',';
+      new_line += std::to_string(ema.at(j)) + ',';
+      new_line += std::to_string(so_k.at(j)) + ',';
+      if (j < (i16)so_d.size()) {
+        new_line += std::to_string(so_d.at(j)) + ',';
       } else {
-        new_line += std::to_string(so_d.at(so_d.size() - 1)) + ',';
+        new_line += std::to_string(so_d.back()) + ',';
       }
-      new_line += std::to_string(cci.at(j - 14));
+      new_line += std::to_string(cci.at(j)) + ',';
+      new_line += std::to_string(atr.at(j));
       new_line += '\n';
       updated_ticket.push_back(new_line);
     }

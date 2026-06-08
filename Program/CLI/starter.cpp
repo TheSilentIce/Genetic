@@ -3,8 +3,6 @@
 #include <iostream>
 #include <string>
 
-enum class Codes { help, quit, build, run, predict, clear, error };
-
 Codes convert(char *b) {
   std::string s = b;
 
@@ -25,7 +23,7 @@ Codes convert(char *b) {
 }
 
 int main() {
-  system("clear");
+  clear();
   std::cout << "Genetic CLI started\n";
   bool running = true;
   char *buffer = new char[100];
@@ -38,13 +36,16 @@ int main() {
       std::cout << "Quitting...\n";
       break;
     case Codes::clear:
-      system("clear");
+      clear();
       break;
     case Codes::help:
       help();
       break;
     case Codes::build:
       build();
+      break;
+    case Codes::run:
+      run();
       break;
     default:
       std::cout << "Commando not found\n";

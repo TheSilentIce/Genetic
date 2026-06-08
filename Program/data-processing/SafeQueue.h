@@ -22,6 +22,14 @@ public:
     item = q.front();
     q.pop();
   }
+  bool try_pop(T &item) {
+    std::lock_guard<std::mutex> lock(mutex);
+    if (q.empty())
+      return false;
+    item = q.front();
+    q.pop();
+    return true;
+  }
 
 private:
   std::queue<T> q;
