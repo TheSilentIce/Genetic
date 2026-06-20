@@ -14,6 +14,7 @@
 #include <string_view>
 #include <thread>
 #include <utility>
+
 // Format right now is to mutate, crossover, remutate, advance time, and then cull. TODO figure out whether to cull first or advance time first
 const i32 NUM_STOCKS = 10;
 const i32 BASE_POPULATION = 10;
@@ -34,6 +35,7 @@ void main() {
     advance_time();
     cull_population();
   }
+  
 }
 void seed_population(i32 number_of_tickers) {
     for(i32 i = 0; i < BASE_POPULATION; i++) {
