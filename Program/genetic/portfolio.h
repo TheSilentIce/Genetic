@@ -1,24 +1,33 @@
 #ifndef PORTFOLIO_H
 #define PORTFOLIO_H
 
-#include <vector>
 #include <string>
+#include <vector>
 
 class Portfolio {
 public:
-    std::vector<float> stock_map;
-    double balance;
-    int day;
+  std::vector<float> stock_map_;
+  double balance_;
+  int day_;
 
 public:
-    Portfolio(std::vector<float> stock_map, double balance);
-    const std::vector<float> &get_stock_map() const;
-    double get_balance() const { return balance; }
-    std::vector<float> get_dollar_values() const;
-    std::vector<float> get_share_counts(const std::vector<std::vector<std::string>>& all_stock_data, int day) const;
-    std::vector<float> get_percentages(const std::vector<float>& shares, const std::vector<std::vector<std::string>>& all_stock_data, int cur_day) const;
-    void mutate(float prob_per_field);
-    void advance_time(const std::vector<std::vector<std::string>>& all_stock_data, int cur_day);
+  Portfolio() {}
+  Portfolio(std::vector<float> stock_map, double balance);
+
+  Portfolio(std::vector<float> stock_map, double balance, int day);
+  const std::vector<float> &get_stock_map() const;
+  double get_balance() const;
+  std::vector<float> get_dollar_values() const;
+  std::vector<float>
+  get_share_counts(const std::vector<std::vector<std::string>> &all_stock_data,
+                   int day) const;
+  std::vector<float>
+  get_percentages(const std::vector<float> &shares,
+                  const std::vector<std::vector<std::string>> &all_stock_data,
+                  int cur_day) const;
+  void mutate(float prob_per_field);
+  void advance_time(const std::vector<std::vector<std::string>> &all_stock_data,
+                    int cur_day);
 };
 
 #endif
