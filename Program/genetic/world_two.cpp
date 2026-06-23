@@ -32,13 +32,14 @@ double BASE_VALUE = 10;
 const float PRE_CROSS_MUTATION_CHANCE = 0.01;
 const float CROSSOVER_SKIP_CHANCE = 0.5;
 const float POST_CROSS_MUTATION_CHANCE = 0.01;
-std::string FILEPATH = "/test";
+std::filesystem::path filepath =
+      std::filesystem::path(PROJECT_ROOT) / "Program" / "data" / "training.csv";
 std::vector<std::vector<std::string>> PRICE_MAP;
 std::vector<Portfolio> population;
 i32 day = 0;
 
 int main() {
-  PRICE_MAP = read_stocks(FILEPATH);
+  PRICE_MAP = read_stocks(filepath.string());
   seed_population(BASE_POPULATION);
   while (day < PRICE_MAP.size()) {
     mutate_pop(PRE_CROSS_MUTATION_CHANCE);
