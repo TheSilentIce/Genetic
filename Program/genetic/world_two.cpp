@@ -31,8 +31,8 @@ const i32 BASE_VALUE = 10;
 const float PRE_CROSS_MUTATION_CHANCE = 0.01;
 const float CROSSOVER_SKIP_CHANCE = 0.5;
 const float POST_CROSS_MUTATION_CHANCE = 0.01;
-const std::string FILEPATH = "/test";
-const std::vector<std::vector<std::string>> PRICE_MAP;
+std::string FILEPATH = "/test";
+std::vector<std::vector<std::string>> PRICE_MAP;
 std::vector<Portfolio> population;
 i32 day = 0;
 
@@ -91,8 +91,9 @@ void cull_population() {
        i++) {
     population2.push_back(population[i]);
     // Kill original population 1
-    population = population2;
+    
   }
+  population = population2;
 }
 void advance_time() {
   day = day + 1; // TODO add day overflow protection
