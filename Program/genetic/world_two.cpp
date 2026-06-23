@@ -46,6 +46,7 @@ int main() {
     advance_time();
     cull_population();
   }
+  std::cout << population[0].get_balance() << std::endl;
   return 0;
 }
 void seed_population(i32 number_of_tickers) {

@@ -22,6 +22,7 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_MINSIZEREL "${EXECUTABLE_OUTPUT_DIR}")
 add_executable(run-algorithm Program/genetic/main.cpp)
 add_executable(get-data Program/data-processing/runner.cpp)
 add_executable(genetic-cli Program/CLI/starter.cpp)
+add_executable(world_two Program/genetic/world_two.cpp)
 
 add_subdirectory(Program/data-processing)
 add_subdirectory(Program/genetic)
