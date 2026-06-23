@@ -1,6 +1,7 @@
 #include "world_two.h"
 #include "../types.h"
 #include "genetic_util.h"
+#include "portfolio.h"
 #include <algorithm>
 #include <cstdint>
 #include <cstring>
@@ -27,7 +28,7 @@ void mergeSort(std::vector<Portfolio> &arr, int left, int right);
 // cull. TODO figure out whether to cull first or advance time first
 const i32 NUM_STOCKS = 10;
 const i32 BASE_POPULATION = 10;
-const i32 BASE_VALUE = 10;
+double BASE_VALUE = 10;
 const float PRE_CROSS_MUTATION_CHANCE = 0.01;
 const float CROSSOVER_SKIP_CHANCE = 0.5;
 const float POST_CROSS_MUTATION_CHANCE = 0.01;

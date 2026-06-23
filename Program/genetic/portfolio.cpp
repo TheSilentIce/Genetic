@@ -4,13 +4,13 @@
 #include <string>
 #include <vector>
 
-Portfolio::Portfolio(std::vector<float> stock_map, double balance, int day)
-    : stock_map_(stock_map), balance_(balance), day_(day) {}
+Portfolio::Portfolio(std::vector<float> stock_map, double balance)
+    : stock_map_(stock_map), balance_(balance) {}
 
 const std::vector<float> &Portfolio::get_stock_map() const {
   return stock_map_;
 }
-
+double Portfolio::get_balance() const { return balance_; }
 float get_close_price(const std::string &csv_line) {
   std::stringstream ss(csv_line);
   std::string discard;

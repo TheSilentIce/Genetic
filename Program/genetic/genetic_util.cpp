@@ -131,7 +131,7 @@ void normalize(std::vector<float> &child) {
 
 // if a gene is chosen to be mutated, just adding 8% to it; arbritary number,
 // change as you want
-void mutate(std::vector<float> child) {
+void mutate(std::vector<float> &child) {
   i16 size = child.size();
 
   for (i16 i{0}; i < size; ++i) {
@@ -145,7 +145,7 @@ void mutate(std::vector<float> child) {
   normalize(child);
 }
 
-Portfolio create_child(std::vector<float> child) { return Portfolio(child, 10, 0); }
+Portfolio create_child(std::vector<float> child) { return Portfolio(child, 10); }
 
 std::vector<float> create_random_array(const i16 size) {
   std::vector<float> props{};
