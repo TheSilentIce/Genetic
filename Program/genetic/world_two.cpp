@@ -121,6 +121,7 @@ std::vector<std::vector<std::string>> read_stocks(const std::string &filepath) {
   while (std::getline(data_file, line)) {
     if (isFirst) {
       ticket.push_back(line);
+      std::getline(data_file, line);
       isFirst = false;
       continue;
     }
