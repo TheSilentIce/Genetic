@@ -44,11 +44,13 @@ int main() {
   while (day < 2) {
     mutate_pop(PRE_CROSS_MUTATION_CHANCE);
     add_crossover();
+    std::cout << population.size() << std::endl;
     mutate_pop(POST_CROSS_MUTATION_CHANCE);
     advance_time();
     cull_population();
   }
-  std::cout << population[0].get_balance() << std::endl;
+  std::cout << population[population.size() - 1].get_balance() << std::endl;
+  std::cout << population.size() << std::endl;
   return 0;
 }
 void seed_population(i32 number_of_tickers) {
@@ -68,19 +70,20 @@ void mutate_pop(float chance) {
 }
 void add_crossover() {
   // Double for loop ensures that the thing is symmetrical
-  for (i32 i = 0; i < population.size(); i++) {
+  i32 population_size = population.size();
+  for (i32 i = 0; i < population_size; i++) {
     float xi = random_float();
     if (xi < CROSSOVER_SKIP_CHANCE) {
       continue;
     }
-    for (i32 j = 0; j < population.size(); j++) {
+    for (i32 j = 0; j < population_size; j++) {
       float xj = random_float();
-      if (xi < CROSSOVER_SKIP_CHANCE) {
+      if (xj < CROSSOVER_SKIP_CHANCE) {
         continue;
       }
       float balance = (population[i].balance_ + population[j].balance_) / 2;
-      Portfolio x =
-          Portfolio(blend_crossover(&population[i], &population[j]), balance);
+      Portfolio x = Portfolio(blend_crossover(&population[i], &population[j]), balance);
+      population.push_back(x);
     }
   }
 }

@@ -20,7 +20,6 @@ float get_close_price(const std::string &csv_line) {
   }
   std::string close_str;
   if (std::getline(ss, close_str, ',')) {
-    std::cout << "Close price: " << close_str << std::endl;
     return std::stof(close_str);
   }
 

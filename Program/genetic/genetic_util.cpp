@@ -103,8 +103,8 @@ std::vector<float> blend_crossover(Portfolio *parent1, Portfolio *parent2) {
     float bigger = p1 >= p2 ? p1 : p2;
     float smaller = p2 <= p1 ? p2 : p1;
 
-    float min = bigger - ALPHA * (smaller - bigger);
-    float max = bigger + ALPHA * (smaller - bigger);
+    float min = bigger - ALPHA * (bigger - smaller);
+    float max = bigger + ALPHA * (bigger - smaller);
 
     std::uniform_real_distribution<float> distr1(min, max);
     float new_gene = distr1(get_engine());
