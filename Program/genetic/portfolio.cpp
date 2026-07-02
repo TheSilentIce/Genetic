@@ -88,4 +88,10 @@ void Portfolio::advance_time(
     const std::vector<std::vector<std::string>> &all_stock_data, int cur_day) {
   stock_map_ = get_percentages(get_share_counts(all_stock_data, cur_day),
                                all_stock_data, cur_day + 1);
+    float sum = 0;
+    for (float val : get_dollar_values()) {
+      sum += val;
+    }
+    std::cout << "Balance: " << sum << std::endl;
+    balance_ = sum;
 }
