@@ -44,7 +44,7 @@ int main() {
   while (day < 3) {
     mutate_pop(PRE_CROSS_MUTATION_CHANCE);
     add_crossover();
-    std::cout << population.size() << std::endl;
+    // std::cout << population.size() << std::endl;
     mutate_pop(POST_CROSS_MUTATION_CHANCE);
     advance_time();
     cull_population();

@@ -90,8 +90,9 @@ void Portfolio::advance_time(
                                all_stock_data, cur_day + 1);
     float sum = 0;
     for (float val : get_dollar_values()) {
+      // std::cout << "Balance: " << val << std::endl;
       sum += val;
     }
-    std::cout << "Balance: " << sum << std::endl;
+    // std::cout << "Balance: " << sum << std::endl;
     balance_ = sum;
 }
