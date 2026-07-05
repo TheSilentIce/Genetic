@@ -101,3 +101,11 @@ void Portfolio::advance_time(
   stock_map_ = get_percentages(shares, all_stock_data, cur_day + 1);
       balance_ = get_balance_by_day(all_stock_data, shares, cur_day + 1);
 }
+void Portfolio::print_portfolio() const {
+  std::cout << "Balance: " << balance_ << std::endl;
+  std::cout << "Stock Map: ";
+  for (const auto &percentage : stock_map_) {
+    std::cout << percentage << " ";
+  }
+  std::cout << std::endl;
+}

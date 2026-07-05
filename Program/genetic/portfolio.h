@@ -31,6 +31,7 @@ public:
   float get_balance_by_day (
     const std::vector<std::vector<std::string>> &all_stock_data, std::vector<float> shares,
     int cur_day) const;
+  void print_portfolio() const;
 };
 
 #endif
