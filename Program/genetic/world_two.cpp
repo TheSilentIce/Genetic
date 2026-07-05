@@ -41,7 +41,7 @@ i32 day = 0;
 int main() {
   PRICE_MAP = read_stocks(filepath.string());
   seed_population(BASE_POPULATION);
-  while (day < 3) {
+  while (day < 600) {
     mutate_pop(PRE_CROSS_MUTATION_CHANCE);
     add_crossover();
     // std::cout << population.size() << std::endl;

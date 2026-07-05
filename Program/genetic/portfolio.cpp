@@ -48,6 +48,17 @@ std::vector<float> Portfolio::get_share_counts(
   }
   return shares;
 }
+float Portfolio::get_balance_by_day (
+    const std::vector<std::vector<std::string>> &all_stock_data,
+    std::vector<float> shares,
+    int cur_day) const {
+      float sum = 0;
+  for (int i = 0; i < stock_map_.size(); ++i) {
+    float current_price = get_close_price(all_stock_data[i][cur_day]);
+    sum += shares[i] * current_price;
+  }
+  return sum;
+}
 std::vector<float> Portfolio::get_percentages(
     const std::vector<float> &shares,
     const std::vector<std::vector<std::string>> &all_stock_data,
@@ -86,13 +97,7 @@ void Portfolio::mutate(float prob_per_field) {
 }
 void Portfolio::advance_time(
     const std::vector<std::vector<std::string>> &all_stock_data, int cur_day) {
-  stock_map_ = get_percentages(get_share_counts(all_stock_data, cur_day),
-                               all_stock_data, cur_day + 1);
-    float sum = 0;
-    for (float val : get_dollar_values()) {
-      // std::cout << "Balance: " << val << std::endl;
-      sum += val;
-    }
-    // std::cout << "Balance: " << sum << std::endl;
-    balance_ = sum;
+      std::vector<float> shares = get_share_counts(all_stock_data, cur_day);
+  stock_map_ = get_percentages(shares, all_stock_data, cur_day + 1);
+      balance_ = get_balance_by_day(all_stock_data, shares, cur_day + 1);
 }

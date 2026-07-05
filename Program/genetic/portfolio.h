@@ -28,6 +28,9 @@ public:
   void mutate(float prob_per_field);
   void advance_time(const std::vector<std::vector<std::string>> &all_stock_data,
                     int cur_day);
+  float get_balance_by_day (
+    const std::vector<std::vector<std::string>> &all_stock_data, std::vector<float> shares,
+    int cur_day) const;
 };
 
 #endif
